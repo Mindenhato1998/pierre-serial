@@ -385,11 +385,17 @@
             const device = urlParams.get('device');
             const session = urlParams.get('session');
 
+            console.log('URL params check:', { device, session });
+
             if (device && session) {
+                console.log('Auto-connecting with:', device, session);
                 document.getElementById('deviceId').value = device;
                 document.getElementById('sessionId').value = session;
                 // Auto-connect after a short delay
-                setTimeout(connectToMQTT, 500);
+                setTimeout(() => {
+                    console.log('Triggering auto-connect...');
+                    connectToMQTT();
+                }, 500);
             }
         });
 
