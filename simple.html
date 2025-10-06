@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: monospace; background: #1a1a1a; color: #e0e0e0; padding: 20px;">
+<body style="font-family: monospace; background: #1a1a1a; color: #e0e0e0; padding: 10px; margin: 0;">
     <h1>Pierre Serial Viewer - Simple Version</h1>
 
     <div id="status" style="background: #333; padding: 10px; margin: 10px 0; border-radius: 5px;">
@@ -20,7 +20,7 @@
         </button>
     </div>
 
-    <div id="messages" style="background: #0a0a0a; padding: 15px; margin-top: 20px; height: 400px; overflow-y: auto; border-radius: 5px; display: none;">
+    <div id="messages" style="background: #0a0a0a; padding: 10px; margin-top: 20px; height: calc(100vh - 300px); min-height: 400px; overflow-y: auto; border-radius: 5px; display: none; width: 100%; box-sizing: border-box; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; line-height: 1.15;">
     </div>
 
     <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
@@ -82,8 +82,10 @@
             client.on('message', function(t, payload) {
                 const msg = payload.toString();
                 const msgDiv = document.createElement('div');
-                msgDiv.style.borderBottom = '1px solid #333';
-                msgDiv.style.padding = '2px 0';
+                msgDiv.style.borderBottom = '1px solid #222';
+                msgDiv.style.padding = '1px 0';
+                msgDiv.style.margin = '0';
+                msgDiv.style.lineHeight = '1.2';
                 msgDiv.textContent = msg;
                 document.getElementById('messages').appendChild(msgDiv);
 
