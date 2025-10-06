@@ -19,7 +19,7 @@
             display: flex;
             flex-direction: column;
             margin: 0;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
         .container {
@@ -260,9 +260,9 @@
         /* Mobile responsive styles */
         @media (max-width: 768px) {
             .container {
-                width: 100%;
-                height: 100vh;
-                margin: 0;
+                width: calc(100% - 1rem);
+                min-height: calc(100vh - 1rem);
+                margin: 0.5rem;
             }
 
             h1 {
@@ -271,12 +271,9 @@
             }
 
             .main-card {
-                padding: 0.5rem;
-                border-radius: 0;
-                height: 100vh;
-                min-height: 100vh;
-                max-height: 100vh;
-                overflow: hidden;
+                padding: 0.75rem;
+                border-radius: 8px;
+                min-height: calc(100vh - 1rem);
             }
 
             .connection-panel {
@@ -284,33 +281,28 @@
             }
 
             .status-bar {
-                padding: 0.4rem;
-                flex-direction: row;
+                padding: 0.5rem;
+                flex-direction: column;
                 gap: 0.5rem;
-                align-items: center;
-                flex-wrap: wrap;
+                align-items: stretch;
             }
 
             .status {
                 font-size: 0.75rem;
-                flex: 1;
-                display: flex;
-                flex-wrap: wrap;
-                align-items: center;
-                gap: 0.5rem;
+                justify-content: center;
+                text-align: center;
             }
 
             .control-buttons {
-                flex-shrink: 0;
-                justify-content: flex-end;
-                gap: 0.25rem;
+                width: 100%;
+                justify-content: space-around;
             }
 
             .control-buttons button {
-                padding: 0.3rem 0.5rem;
-                font-size: 0.65rem;
-                flex: none;
-                min-width: auto;
+                padding: 0.4rem 0.6rem;
+                font-size: 0.7rem;
+                flex: 1;
+                max-width: 80px;
             }
 
 
@@ -331,38 +323,38 @@
 
             #deviceInfo {
                 font-size: 0.7rem;
+                display: inline;
             }
 
             #messageCount {
                 font-size: 0.7rem;
+                display: inline;
             }
 
             #connTime {
                 font-size: 0.7rem;
+                display: inline;
             }
 
             #monitorPanel {
                 display: flex !important;
                 flex-direction: column;
-                height: calc(100vh - 3.5rem);
-                position: relative;
+                height: calc(100vh - 4rem);
             }
 
             .status-bar {
                 flex-shrink: 0;
-                margin-bottom: 0.25rem;
             }
 
             .console {
                 flex: 1;
                 overflow-y: auto;
-                position: absolute;
-                top: 50px;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                margin: 0;
-                border-radius: 4px;
+                position: relative;
+                margin: 0.5rem 0;
+                padding: 0.5rem;
+                font-size: 0.75rem;
+                line-height: 1.2;
+                min-height: 200px;
             }
         }
 
