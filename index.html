@@ -377,7 +377,16 @@
         let connectionTime = null;
 
         // Initialize AnsiUp for ANSI color support
-        const ansiUp = new AnsiUp.default();
+        let ansiUp;
+        try {
+            ansiUp = new AnsiUp.default();
+        } catch (e) {
+            console.log('AnsiUp initialization failed, trying alternative:', e);
+            // Try alternative initialization
+            if (typeof AnsiUp !== 'undefined') {
+                ansiUp = new AnsiUp();
+            }
+        }
 
         // Check URL parameters
         window.addEventListener('DOMContentLoaded', () => {
@@ -525,10 +534,18 @@
                 logLine.classList.add(type);
             }
 
-            // Convert ANSI codes to HTML
-            const htmlMessage = ansiUp.ansi_to_html(message);
+            // Convert ANSI codes to HTML if ansiUp is available
+            let htmlMessage = message;
+            if (ansiUp && ansiUp.ansi_to_html) {
+                try {
+                    htmlMessage = ansiUp.ansi_to_html(message);
+                } catch (e) {
+                    console.log('ANSI conversion failed:', e);
+                    htmlMessage = message;
+                }
+            }
 
-            // Set the HTML content (no timestamp)
+            // Set the content (no timestamp)
             logLine.innerHTML = htmlMessage;
 
             // Auto-detect type only if no ANSI colors and no type specified
