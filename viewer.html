@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Serial Viewer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: monospace; background: #1a1a1a; color: #e0e0e0; padding: 10px; margin: 0;">
+    <h1>Pierre Serial Viewer - Full Width</h1>
+
+    <div id="status" style="background: #333; padding: 10px; margin: 10px 0; border-radius: 5px;">
+        Checking URL parameters...
+    </div>
+
+    <div style="background: #2a2a2a; padding: 15px; border-radius: 5px;">
+        <p>Device ID: <input type="text" id="deviceId" style="width: 300px; padding: 5px;"></p>
+        <p>Session ID: <input type="text" id="sessionId" style="width: 300px; padding: 5px;"></p>
+        <button onclick="connectNow()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Connect
+        </button>
+    </div>
+
+    <div id="messages" style="background: #0a0a0a; padding: 10px; margin-top: 20px; height: calc(100vh - 300px); min-height: 400px; overflow-y: auto; border-radius: 5px; display: none; width: 100%; box-sizing: border-box; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; line-height: 1.15;">
+    </div>
+
+    <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
+    <script>
+        let client = null;
+
+        // Check URL params IMMEDIATELY
+        const urlParams = new URLSearchParams(window.location.search);
+        const device = urlParams.get('device');
+        const session = urlParams.get('session');
+
+        document.getElementById('status').innerHTML =
+            'URL: ' + window.location.href + '<br>' +
+            'Device from URL: ' + device + '<br>' +
+            'Session from URL: ' + session;
+
+        if (device) document.getElementById('deviceId').value = device;
+        if (session) document.getElementById('sessionId').value = session;
+
+        // Auto-connect if both params present
+        if (device && session) {
+            document.getElementById('status').innerHTML += '<br><b>Auto-connecting in 1 second...</b>';
+            setTimeout(connectNow, 1000);
+        }
+
+        function connectNow() {
+            const deviceId = document.getElementById('deviceId').value;
+            const sessionId = document.getElementById('sessionId').value;
+
+            if (!deviceId || !sessionId) {
+                alert('Please enter both Device ID and Session ID');
+                return;
+            }
+
+            document.getElementById('status').innerHTML = 'Connecting to MQTT...';
+            document.getElementById('messages').style.display = 'block';
+            document.getElementById('messages').innerHTML = '<div>Connecting...</div>';
+
+            const topic = 'pierre/serial/' + deviceId + '/' + sessionId;
+
+            client = mqtt.connect('wss://0c1bf62a21e94682adf340b8a2d3fe04.s1.eu.hivemq.cloud:8884/mqtt', {
+                clientId: 'web_' + Date.now(),
+                username: 'pierreflasher',
+                password: 'Pierre2k23',
+                clean: true
+            });
+
+            client.on('connect', function() {
+                document.getElementById('status').innerHTML = '✅ Connected! Topic: ' + topic;
+                document.getElementById('messages').innerHTML = '<div style="color: #4CAF50;">Connected! Waiting for messages...</div>';
+
+                client.subscribe(topic, function(err) {
+                    if (err) {
+                        document.getElementById('messages').innerHTML += '<div style="color: red;">Subscribe error: ' + err + '</div>';
+                    }
+                });
+            });
+
+            client.on('message', function(t, payload) {
+                const msg = payload.toString();
+                const msgDiv = document.createElement('div');
+                msgDiv.style.borderBottom = '1px solid #222';
+                msgDiv.style.padding = '1px 0';
+                msgDiv.style.margin = '0';
+                msgDiv.style.lineHeight = '1.2';
+                msgDiv.textContent = msg;
+                document.getElementById('messages').appendChild(msgDiv);
+
+                // Auto scroll
+                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            });
+
+            client.on('error', function(err) {
+                document.getElementById('status').innerHTML = '❌ Error: ' + err;
+            });
+        }
+    </script>
+</body>
+</html>
