@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MQTT Debug</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: monospace; background: #1a1a1a; color: #e0e0e0; padding: 20px;">
+    <h1>MQTT Debug - Device Info Test</h1>
+
+    <div style="background: #333; padding: 15px; margin: 20px 0; border-radius: 5px;">
+        <p>Device ID: <input type="text" id="deviceId" style="width: 300px; padding: 5px;"></p>
+        <p>Session ID: <input type="text" id="sessionId" style="width: 300px; padding: 5px;"></p>
+        <button onclick="connectNow()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Connect
+        </button>
+    </div>
+
+    <div id="status" style="background: #333; padding: 15px; margin: 20px 0; border-radius: 5px;">
+        Status: Not connected
+    </div>
+
+    <div id="logs" style="background: #0a0a0a; padding: 15px; margin: 20px 0; height: 400px; overflow-y: auto; border-radius: 5px;">
+    </div>
+
+    <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
+    <script>
+        let client = null;
+
+        // Check URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const device = urlParams.get('device');
+        const session = urlParams.get('session');
+
+        if (device) document.getElementById('deviceId').value = device;
+        if (session) document.getElementById('sessionId').value = session;
+
+        if (device && session) {
+            setTimeout(connectNow, 500);
+        }
+
+        function addLog(message, color = '#e0e0e0') {
+            const logsDiv = document.getElementById('logs');
+            const logEntry = document.createElement('div');
+            logEntry.style.color = color;
+            logEntry.textContent = new Date().toTimeString().split(' ')[0] + ' | ' + message;
+            logsDiv.appendChild(logEntry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function connectNow() {
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const sessionId = document.getElementById('sessionId').value.trim();
+
+            if (!deviceId || !sessionId) {
+                alert('Please enter both Device ID and Session ID');
+                return;
+            }
+
+            document.getElementById('status').textContent = 'Status: Connecting...';
+            addLog('Connecting to MQTT broker...', '#ffeb3b');
+
+            const mainTopic = 'pierre/serial/' + deviceId + '/' + sessionId;
+            const infoTopic = 'pierre/serial/' + deviceId + '/' + sessionId + '/info';
+
+            client = mqtt.connect('wss://0c1bf62a21e94682adf340b8a2d3fe04.s1.eu.hivemq.cloud:8884/mqtt', {
+                clientId: 'debug_' + Date.now(),
+                username: 'pierreflasher',
+                password: 'Pierre2k23',
+                clean: true
+            });
+
+            client.on('connect', function() {
+                document.getElementById('status').textContent = 'Status: Connected!';
+                addLog('Connected to broker!', '#4CAF50');
+
+                // Subscribe to main topic
+                addLog('Subscribing to main topic: ' + mainTopic, '#2196F3');
+                client.subscribe(mainTopic, function(err) {
+                    if (err) {
+                        addLog('Main topic subscribe error: ' + err, '#f44336');
+                    } else {
+                        addLog('Subscribed to main topic successfully!', '#4CAF50');
+                    }
+                });
+
+                // Subscribe to info topic
+                addLog('Subscribing to info topic: ' + infoTopic, '#2196F3');
+                client.subscribe(infoTopic, function(err) {
+                    if (err) {
+                        addLog('Info topic subscribe error: ' + err, '#f44336');
+                    } else {
+                        addLog('Subscribed to info topic successfully!', '#4CAF50');
+                    }
+                });
+            });
+
+            client.on('message', function(topic, payload) {
+                const msg = payload.toString();
+
+                if (topic.endsWith('/info')) {
+                    addLog('📱 DEVICE INFO: ' + msg, '#00ff00');
+
+                    // Parse device info
+                    const parts = msg.split('|');
+                    if (parts.length === 2) {
+                        addLog('  Device Name: ' + parts[0], '#00ff00');
+                        addLog('  Battery: ' + parts[1] + '%', '#00ff00');
+                    }
+                } else {
+                    addLog('Serial: ' + msg.substring(0, 100) + (msg.length > 100 ? '...' : ''), '#e0e0e0');
+                }
+            });
+
+            client.on('error', function(err) {
+                document.getElementById('status').textContent = 'Status: Error - ' + err;
+                addLog('Connection error: ' + err, '#f44336');
+            });
+        }
+    </script>
+</body>
+</html>
