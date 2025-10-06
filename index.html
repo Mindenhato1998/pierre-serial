@@ -357,6 +357,8 @@
 
     <!-- MQTT.js from CDN -->
     <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
+    <!-- AnsiUp for ANSI color support -->
+    <script src="https://cdn.jsdelivr.net/npm/ansi_up@5.1.0/ansi_up.min.js"></script>
 
     <script>
         // HiveMQ Configuration
@@ -373,6 +375,9 @@
         let autoScroll = true;
         let logs = [];
         let connectionTime = null;
+
+        // Initialize AnsiUp for ANSI color support
+        const ansiUp = new AnsiUp.default();
 
         // Check URL parameters
         window.addEventListener('DOMContentLoaded', () => {
@@ -514,13 +519,14 @@
                 logLine.classList.add(type);
             }
 
-            // Add timestamp
-            const now = new Date();
-            const time = now.toTimeString().split(' ')[0];
-            logLine.textContent = `[${time}] ${message}`;
+            // Convert ANSI codes to HTML
+            const htmlMessage = ansiUp.ansi_to_html(message);
 
-            // Auto-detect type
-            if (!type) {
+            // Set the HTML content (no timestamp)
+            logLine.innerHTML = htmlMessage;
+
+            // Auto-detect type only if no ANSI colors and no type specified
+            if (!type && !message.includes('\x1b[')) {
                 if (message.includes('ERROR') || message.includes('❌')) {
                     logLine.classList.add('error');
                 } else if (message.includes('SUCCESS') || message.includes('✅')) {
@@ -533,7 +539,7 @@
             }
 
             console.appendChild(logLine);
-            logs.push(logLine.textContent);
+            logs.push(message); // Store raw message without timestamp
 
             // Auto-scroll
             if (autoScroll) {
