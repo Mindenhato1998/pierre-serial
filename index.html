@@ -336,11 +336,13 @@
             }
 
             .info-panel {
+                position: relative;
+                bottom: auto;
+                left: auto;
+                right: auto;
                 padding: 0.4rem;
                 font-size: 0.6rem;
-                bottom: 0.5rem;
-                left: 0.5rem;
-                right: 0.5rem;
+                margin-top: 0.5rem;
             }
 
             .info-grid {
@@ -349,8 +351,14 @@
             }
 
             .console {
-                top: 50px;
-                bottom: 60px;
+                position: relative;
+                top: auto;
+                bottom: auto;
+                left: auto;
+                right: auto;
+                height: calc(100vh - 280px);
+                min-height: 200px;
+                margin: 0.5rem 0;
                 padding: 0.5rem;
                 font-size: 0.75rem;
                 line-height: 1.2;
@@ -381,6 +389,25 @@
                 display: block;
                 text-align: center;
                 margin-top: 0.25rem;
+            }
+
+            #monitorPanel {
+                display: flex !important;
+                flex-direction: column;
+                height: 100%;
+            }
+
+            .status-bar {
+                flex-shrink: 0;
+            }
+
+            .console {
+                flex: 1;
+                overflow-y: auto;
+            }
+
+            .info-panel {
+                flex-shrink: 0;
             }
         }
 
