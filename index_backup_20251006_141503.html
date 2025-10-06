@@ -461,7 +461,7 @@
                 // Update UI
                 document.getElementById('connectionPanel').style.display = 'none';
                 document.getElementById('monitorPanel').style.display = 'block';
-                updateStatus('Waiting for device...', true);
+                updateStatus('Connected', true);
 
                 // Subscribe to main topic
                 client.subscribe(topic, { qos: 0 }, (err) => {
@@ -486,17 +486,6 @@
                     }
                 });
 
-                // Subscribe to status topic
-                const statusTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/status`;
-                client.subscribe(statusTopic, { qos: 0 }, (err) => {
-                    if (err) {
-                        console.error('Status subscribe error:', err);
-                    } else {
-                        console.log('Subscribed to device status:', statusTopic);
-                        addLog(`Monitoring status: ${statusTopic}`, 'info');
-                    }
-                });
-
                 // Reset button
                 connectBtn.disabled = false;
                 connectBtn.textContent = 'Connect to Live Stream';
@@ -506,22 +495,8 @@
             client.on('message', (topic, payload) => {
                 const message = payload.toString();
 
-                // Check message type based on topic ending
-                if (topic.endsWith('/status')) {
-                    // Handle status message
-                    console.log('Status message received:', message);
-                    if (message === 'connected') {
-                        updateStatus('Device Online', true);
-                        addLog('📱 Android app connected', 'success');
-                    } else if (message === 'disconnected') {
-                        updateStatus('Device Offline', false);
-                        addLog('📱 Android app disconnected', 'error');
-                        // Clear device info when disconnected
-                        document.getElementById('deviceInfo').textContent = '';
-                    } else {
-                        addLog(`Unknown status: ${message}`, 'warning');
-                    }
-                } else if (topic.endsWith('/info')) {
+                // Check if this is a device info message
+                if (topic.endsWith('/info')) {
                     // Parse device info format: "deviceName|batteryPct"
                     const parts = message.split('|');
                     if (parts.length === 2) {
