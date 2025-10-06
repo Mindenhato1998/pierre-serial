@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Test</title>
+</head>
+<body>
+    <h1>URL Parameter Test</h1>
+    <p>Device: <input type="text" id="deviceId"></p>
+    <p>Session: <input type="text" id="sessionId"></p>
+
+    <script>
+        // Parse URL immediately
+        const params = new URLSearchParams(window.location.search);
+        const device = params.get('device');
+        const session = params.get('session');
+
+        alert('Device: ' + device + '\nSession: ' + session);
+
+        if (device) document.getElementById('deviceId').value = device;
+        if (session) document.getElementById('sessionId').value = session;
+    </script>
+</body>
+</html>
