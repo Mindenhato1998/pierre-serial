@@ -15,16 +15,16 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: #0a0a0a;
             color: #ffffff;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             margin: 0;
-            overflow-x: hidden;
+            overflow: hidden;
         }
 
         .container {
             width: calc(100% - 2rem);
-            min-height: calc(100vh - 2rem);
+            height: calc(100vh - 2rem);
             margin: 1rem;
             display: flex;
             flex-direction: column;
@@ -50,6 +50,7 @@
             flex-direction: column;
             overflow: hidden;
             position: relative;
+            height: 100%;
         }
 
         .connection-panel {
@@ -248,20 +249,23 @@
 
         #monitorPanel {
             flex: 1;
-            position: relative;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
             min-height: 0;
+            height: 100%;
         }
 
         #connectionPanel {
             flex-shrink: 0;
+            overflow-y: auto;
         }
 
         /* Mobile responsive styles */
         @media (max-width: 768px) {
             .container {
                 width: calc(100% - 1rem);
-                min-height: calc(100vh - 1rem);
+                height: calc(100vh - 1rem);
                 margin: 0.5rem;
             }
 
@@ -273,7 +277,7 @@
             .main-card {
                 padding: 0.75rem;
                 border-radius: 8px;
-                min-height: calc(100vh - 2rem);
+                height: calc(100vh - 1rem);
             }
 
             .connection-panel {
