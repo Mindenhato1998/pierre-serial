@@ -413,7 +413,6 @@
                         <span id="statusText">Disconnected</span>
                         <span id="deviceInfo" style="color: #ffffff; margin-left: 1rem;"></span>
                         <span id="messageCount" style="color: #666; margin-left: 1rem;">0 messages</span>
-                        <span id="connTime" style="color: #999; margin-left: 1rem;">-</span>
                     </div>
                     <div class="control-buttons">
                         <button onclick="clearLogs()">Clear</button>
@@ -450,7 +449,6 @@
         let messageCount = 0;
         let autoScroll = true;
         let logs = [];
-        let connectionTime = null;
         let lastHeartbeat = null;
         let heartbeatCheckInterval = null;
 
@@ -521,8 +519,6 @@
             // Connection successful
             client.on('connect', () => {
                 console.log('Connected to HiveMQ Cloud');
-                connectionTime = new Date();
-                updateConnectionTime();
 
                 // Update UI
                 document.getElementById('connectionPanel').style.display = 'none';
@@ -671,7 +667,6 @@
             // Clear data
             clearLogs();
             messageCount = 0;
-            connectionTime = null;
             document.getElementById('messageCount').textContent = '0 messages';
             updateStatus('Disconnected', false);
         }
@@ -779,25 +774,6 @@
             }
         }
 
-        function updateConnectionTime() {
-            if (!connectionTime) return;
-
-            const now = new Date();
-            const diff = Math.floor((now - connectionTime) / 1000);
-            const hours = Math.floor(diff / 3600);
-            const minutes = Math.floor((diff % 3600) / 60);
-            const seconds = diff % 60;
-
-            let timeStr = '';
-            if (hours > 0) timeStr += `${hours}h `;
-            if (minutes > 0) timeStr += `${minutes}m `;
-            timeStr += `${seconds}s`;
-
-            document.getElementById('connTime').textContent = timeStr;
-        }
-
-        // Update connection time every second
-        setInterval(updateConnectionTime, 1000);
 
         // Clean up on page unload
         window.addEventListener('beforeunload', () => {
