@@ -138,7 +138,6 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 1rem;
-            flex-shrink: 0;
         }
 
         .status {
@@ -186,7 +185,6 @@
             word-wrap: break-word;
             word-break: break-word;
             -webkit-overflow-scrolling: touch;
-            min-height: 300px;
         }
 
         .log-line {
@@ -250,16 +248,42 @@
 
         #monitorPanel {
             flex: 1;
-            position: relative;
-            overflow: hidden;
-            min-height: 0;
             display: flex;
             flex-direction: column;
-            max-height: calc(100vh - 120px);
+            overflow: hidden;
+            min-height: 0;
         }
 
         #connectionPanel {
             flex-shrink: 0;
+        }
+
+        /* Desktop larger than 768px - absolute positioning for proper height */
+        @media (min-width: 769px) {
+            .status-bar {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 10;
+                margin-bottom: 0;
+            }
+
+            .console {
+                position: absolute;
+                top: 80px;
+                left: 0;
+                right: 0;
+                bottom: 1rem;
+                flex: none;
+            }
+
+            #monitorPanel {
+                position: relative;
+                flex: 1;
+                min-height: 400px;
+                height: calc(100vh - 180px);
+            }
         }
 
         /* Mobile responsive styles */
@@ -311,7 +335,6 @@
                 max-width: 80px;
             }
 
-
             .console {
                 flex: 1;
                 margin: 0.5rem 0 0 0;
@@ -323,6 +346,11 @@
                 -webkit-overflow-scrolling: touch;
                 min-height: 200px;
                 max-height: calc(100vh - 280px);
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                right: auto !important;
+                bottom: auto !important;
             }
 
             input {
@@ -357,19 +385,13 @@
                 flex-direction: column;
                 height: calc(100vh - 120px);
                 max-height: calc(100vh - 120px);
+                position: relative !important;
             }
 
             .status-bar {
                 flex-shrink: 0;
-                position: static;
+                position: static !important;
                 margin-bottom: 0.5rem;
-            }
-
-            .console {
-                flex: 1;
-                overflow-y: auto;
-                position: relative !important;
-                min-height: 0;
             }
         }
 
