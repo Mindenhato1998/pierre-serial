@@ -844,6 +844,24 @@
         }
 
 
+        // Handle orientation change to reset scroll position
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+                document.body.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+            }, 100);
+        });
+
+        // Also handle resize events
+        window.addEventListener('resize', () => {
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+                document.body.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+            }, 100);
+        });
+
         // Clean up on page unload
         window.addEventListener('beforeunload', () => {
             if (client) {
