@@ -712,8 +712,12 @@
                 } else {
                     // Regular serial data message
                     addLog(message);
-                    messageCount++;
-                    document.getElementById('messageCount').textContent = `${messageCount} messages`;
+
+                    // Limit message count to 1000 (circular buffer size)
+                    if (messageCount < 1000) {
+                        messageCount++;
+                    }
+                    document.getElementById('messageCount').textContent = `${messageCount} messages${messageCount >= 1000 ? ' (buffer full)' : ''}`;
                 }
             });
 
@@ -815,6 +819,8 @@
             const console = document.getElementById('console');
             console.innerHTML = '<div class="no-data">Waiting for serial data...</div>';
             logs = [];
+            messageCount = 0;
+            document.getElementById('messageCount').textContent = '0 messages';
         }
 
         function toggleAutoScroll() {
