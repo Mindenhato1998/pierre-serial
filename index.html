@@ -786,6 +786,20 @@
             console.appendChild(logLine);
             logs.push(message); // Store raw message without timestamp
 
+            // Circular buffer - keep only last 1000 messages
+            const MAX_MESSAGES = 1000;
+            while (console.children.length > MAX_MESSAGES) {
+                // Remove oldest message (but keep the "no-data" div if it exists)
+                if (console.firstChild && !console.firstChild.classList.contains('no-data')) {
+                    console.removeChild(console.firstChild);
+                }
+            }
+
+            // Also limit the logs array
+            if (logs.length > MAX_MESSAGES) {
+                logs = logs.slice(-MAX_MESSAGES);
+            }
+
             // Auto-scroll
             if (autoScroll) {
                 console.scrollTop = console.scrollHeight;
