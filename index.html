@@ -714,10 +714,13 @@
                     addLog(message);
 
                     // Limit message count to 1000 (circular buffer size)
-                    if (messageCount < 1000) {
-                        messageCount++;
-                    }
-                    document.getElementById('messageCount').textContent = `${messageCount} messages${messageCount >= 1000 ? ' (buffer full)' : ''}`;
+                    messageCount = Math.min(messageCount + 1, 1000);
+
+                    // Update counter display
+                    const counterText = messageCount >= 1000
+                        ? '1000 messages (buffer full)'
+                        : `${messageCount} messages`;
+                    document.getElementById('messageCount').textContent = counterText;
                 }
             });
 
