@@ -547,6 +547,7 @@
         let lastHeartbeat = null;
         let heartbeatCheckInterval = null;
         let wasConnectedBefore = false; // Track if app was connected before
+        let currentConnectionState = 'disconnected'; // Track current state to prevent spam
 
         // Initialize AnsiUp for ANSI color support
         let ansiUp;
@@ -669,42 +670,54 @@
                     // Handle status message
                     console.log('Status message received:', message);
                     if (message === 'connected') {
-                        lastHeartbeat = Date.now();
-                        updateStatus('Device Online', true);
+                        // Only process if state actually changed
+                        if (currentConnectionState !== 'connected') {
+                            lastHeartbeat = Date.now();
+                            updateStatus('Device Online', true);
+                            currentConnectionState = 'connected';
 
-                        // Clear any existing interval first
-                        if (heartbeatCheckInterval) {
-                            clearInterval(heartbeatCheckInterval);
-                            heartbeatCheckInterval = null;
-                        }
-
-                        // Start fresh heartbeat monitoring
-                        heartbeatCheckInterval = setInterval(() => {
-                            if (lastHeartbeat && (Date.now() - lastHeartbeat > 25000)) {
-                                // No heartbeat for 25 seconds, consider device offline
-                                updateStatus('Device Offline', false);
-                                addLog('📱 Android app disconnected (timeout)', 'error');
-                                document.getElementById('deviceInfo').textContent = '';
-                                lastHeartbeat = null;
+                            // Clear any existing interval first
+                            if (heartbeatCheckInterval) {
                                 clearInterval(heartbeatCheckInterval);
                                 heartbeatCheckInterval = null;
                             }
-                        }, 5000); // Check every 5 seconds
 
-                        // Only show reconnected message if was connected before
-                        if (wasConnectedBefore) {
-                            addLog('📱 Android app reconnected', 'success');
+                            // Start fresh heartbeat monitoring
+                            heartbeatCheckInterval = setInterval(() => {
+                                if (lastHeartbeat && (Date.now() - lastHeartbeat > 25000)) {
+                                    // No heartbeat for 25 seconds, consider device offline
+                                    updateStatus('Device Offline', false);
+                                    addLog('📱 Android app disconnected (timeout)', 'error');
+                                    document.getElementById('deviceInfo').textContent = '';
+                                    lastHeartbeat = null;
+                                    clearInterval(heartbeatCheckInterval);
+                                    heartbeatCheckInterval = null;
+                                    currentConnectionState = 'disconnected';
+                                }
+                            }, 5000); // Check every 5 seconds
+
+                            // Only show message when state changes
+                            if (wasConnectedBefore) {
+                                addLog('📱 Android app reconnected', 'success');
+                            } else {
+                                addLog('📱 Android app connected', 'success');
+                                wasConnectedBefore = true;
+                            }
                         } else {
-                            addLog('📱 Android app connected', 'success');
-                            wasConnectedBefore = true;
+                            // Just update heartbeat, don't log anything
+                            lastHeartbeat = Date.now();
                         }
                     } else if (message === 'disconnected') {
-                        updateStatus('Device Offline', false);
-                        addLog('📱 Android app disconnected', 'error');
-                        // Clear device info when disconnected
-                        document.getElementById('deviceInfo').textContent = '';
-                        lastHeartbeat = null;
-                        // Keep wasConnectedBefore = true so next connection shows "reconnected"
+                        // Only process if state actually changed
+                        if (currentConnectionState !== 'disconnected') {
+                            updateStatus('Device Offline', false);
+                            addLog('📱 Android app disconnected', 'error');
+                            // Clear device info when disconnected
+                            document.getElementById('deviceInfo').textContent = '';
+                            lastHeartbeat = null;
+                            currentConnectionState = 'disconnected';
+                            // Keep wasConnectedBefore = true so next connection shows "reconnected"
+                        }
                     } else if (message === '') {
                         // Empty message means retained clear
                         console.log('Retained status cleared');
