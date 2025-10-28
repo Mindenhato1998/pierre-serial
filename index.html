@@ -690,9 +690,8 @@
                                     addLog('📱 Android app disconnected (timeout)', 'error');
                                     document.getElementById('deviceInfo').textContent = '';
                                     lastHeartbeat = null;
-                                    clearInterval(heartbeatCheckInterval);
-                                    heartbeatCheckInterval = null;
                                     currentConnectionState = 'disconnected';
+                                    // DON'T clear the interval - keep monitoring for reconnection
                                 }
                             }, 5000); // Check every 5 seconds
 
@@ -706,6 +705,21 @@
                         } else {
                             // Just update heartbeat, don't log anything
                             lastHeartbeat = Date.now();
+
+                            // If no heartbeat monitor is running, start one (recovery after timeout)
+                            if (!heartbeatCheckInterval) {
+                                heartbeatCheckInterval = setInterval(() => {
+                                    if (lastHeartbeat && (Date.now() - lastHeartbeat > 25000)) {
+                                        // No heartbeat for 25 seconds, consider device offline
+                                        updateStatus('Device Offline', false);
+                                        addLog('📱 Android app disconnected (timeout)', 'error');
+                                        document.getElementById('deviceInfo').textContent = '';
+                                        lastHeartbeat = null;
+                                        currentConnectionState = 'disconnected';
+                                        // DON'T clear the interval - keep monitoring for reconnection
+                                    }
+                                }, 5000); // Check every 5 seconds
+                            }
                         }
                     } else if (message === 'disconnected') {
                         // Only process if state actually changed
