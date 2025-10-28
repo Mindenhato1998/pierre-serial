@@ -546,6 +546,7 @@
         let logs = [];
         let lastHeartbeat = null;
         let heartbeatCheckInterval = null;
+        let wasConnectedBefore = false; // Track if app was connected before
 
         // Initialize AnsiUp for ANSI color support
         let ansiUp;
@@ -690,13 +691,20 @@
                             }
                         }, 5000); // Check every 5 seconds
 
-                        addLog('📱 Android app reconnected', 'success');
+                        // Only show reconnected message if was connected before
+                        if (wasConnectedBefore) {
+                            addLog('📱 Android app reconnected', 'success');
+                        } else {
+                            addLog('📱 Android app connected', 'success');
+                            wasConnectedBefore = true;
+                        }
                     } else if (message === 'disconnected') {
                         updateStatus('Device Offline', false);
                         addLog('📱 Android app disconnected', 'error');
                         // Clear device info when disconnected
                         document.getElementById('deviceInfo').textContent = '';
                         lastHeartbeat = null;
+                        // Keep wasConnectedBefore = true so next connection shows "reconnected"
                     } else if (message === '') {
                         // Empty message means retained clear
                         console.log('Retained status cleared');
