@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pierre ESP32 Serial Viewer - HiveMQ Live</title>
+    <title>Pierre Serial</title>
     <style>
         * {
             margin: 0;
@@ -12,54 +12,54 @@
         }
 
         body {
-            font-family: 'Consolas', 'Monaco', monospace;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0.75rem;
+            height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-            padding: 1rem;
-        }
 
-        .header {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 1.5rem;
-            border-radius: 15px;
-            margin-bottom: 1.5rem;
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: #ffffff;
             text-align: center;
         }
 
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .subtitle {
-            color: #b0b0b0;
-            font-size: 0.9rem;
-        }
-
         .main-card {
-            background: rgba(20, 20, 20, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            background: #146e89;
+            border: 2px solid #1a7fa0;
+            box-shadow: 0 4px 20px rgba(20, 110, 137, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
         }
 
         .connection-panel {
-            background: #2d2d2d;
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            background: #0f5670;
+            border: 2px solid #146e89;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
         }
 
         .input-group {
@@ -69,26 +69,27 @@
         label {
             display: block;
             margin-bottom: 0.5rem;
-            color: #a0a0a0;
+            color: rgba(255, 255, 255, 0.9);
             font-size: 0.9rem;
+            font-weight: 500;
         }
 
         input {
             width: 100%;
             padding: 0.75rem;
-            background: #1a1a1a;
-            border: 2px solid #444;
-            border-radius: 8px;
-            color: #e0e0e0;
-            font-family: monospace;
-            font-size: 1rem;
-            transition: all 0.3s;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 0.875rem;
+            transition: all 0.2s;
         }
 
         input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
         }
 
         .button-group {
@@ -101,19 +102,19 @@
             flex: 1;
             min-width: 120px;
             padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
+            background: #ffffff;
+            color: #146e89;
+            border: 2px solid #ffffff;
+            border-radius: 6px;
+            font-size: 0.875rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
         }
 
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-1px);
         }
 
         button:active {
@@ -127,21 +128,24 @@
         }
 
         .status-bar {
-            background: #2d2d2d;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            background: #0f5670;
+            border: 2px solid #146e89;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 1rem;
+            flex-shrink: 0;
         }
 
         .status {
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            color: #ffffff;
         }
 
         .status-dot {
@@ -167,19 +171,26 @@
         }
 
         .console {
-            background: #0a0a0a;
-            border: 2px solid #2d2d2d;
-            border-radius: 10px;
-            height: 500px;
+            background: #1a1a1a;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: 80px;
             overflow-y: auto;
             padding: 1rem;
-            font-size: 0.9rem;
-            line-height: 1.5;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+            font-size: 0.875rem;
+            line-height: 1.3;
+            box-sizing: border-box;
+            color: #e0e0e0;
         }
 
         .log-line {
-            margin-bottom: 3px;
-            padding: 3px 6px;
+            margin-bottom: 1px;
+            padding: 2px 6px;
             border-radius: 3px;
             white-space: pre-wrap;
             word-wrap: break-word;
@@ -222,21 +233,30 @@
             padding: 0.5rem 1rem;
             min-width: auto;
             flex: none;
-            background: #4a5568;
-            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #146e89;
+            font-size: 0.75rem;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            font-weight: 500;
         }
 
         .control-buttons button:hover {
-            background: #5a6578;
+            background: #ffffff;
+            border-color: #ffffff;
         }
 
         .info-panel {
-            background: #2d2d2d;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-top: 1rem;
-            font-size: 0.85rem;
-            color: #888;
+            background: #0f5670;
+            border: 2px solid #146e89;
+            border-radius: 8px;
+            padding: 0.5rem;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.9);
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            right: 1rem;
+            z-index: 10;
         }
 
         .info-grid {
@@ -252,43 +272,33 @@
         }
 
         .info-label {
-            color: #666;
+            color: rgba(255, 255, 255, 0.6);
         }
 
         .info-value {
-            color: #e0e0e0;
+            color: #ffffff;
             font-weight: 600;
         }
 
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 1.5rem;
-            }
-
-            .console {
-                height: 400px;
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
-
-            button {
-                width: 100%;
-            }
+        #monitorPanel {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
         }
+
+        #connectionPanel {
+            flex-shrink: 0;
+        }
+
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🔌 Pierre ESP32 Serial Viewer</h1>
-            <div class="subtitle">Real-time serial monitoring via HiveMQ Cloud</div>
-        </div>
-
         <div class="main-card">
+            <h1>Pierre Serial</h1>
             <div class="connection-panel" id="connectionPanel">
-                <h2 style="margin-bottom: 1rem;">📡 Connect to Live Stream</h2>
+                <h2 style="margin-bottom: 1rem; color: #ffffff;">Connect to Live Stream</h2>
 
                 <div class="input-group">
                     <label for="deviceId">Device ID (from Android app)</label>
@@ -301,12 +311,12 @@
                 </div>
 
                 <div class="button-group">
-                    <button onclick="connectToMQTT()" id="connectBtn">🚀 Connect to Live Stream</button>
+                    <button onclick="connectToMQTT()" id="connectBtn">Connect to Live Stream</button>
                 </div>
 
                 <div style="margin-top: 1rem; padding: 1rem; background: #1a1a1a; border-radius: 8px;">
                     <p style="color: #888; font-size: 0.85rem;">
-                        💡 <strong>Tip:</strong> Get these IDs from the Pierre Flasher app on your Android device.
+                        <strong>Tip:</strong> Get these IDs from the Pierre Flasher app on your Android device.
                         Click the green Live Share button in Serial Monitor to copy the share URL.
                     </p>
                 </div>
@@ -317,13 +327,14 @@
                     <div class="status">
                         <div id="statusDot" class="status-dot disconnected"></div>
                         <span id="statusText">Disconnected</span>
+                        <span id="deviceInfo" style="color: #ffffff; margin-left: 1rem;"></span>
                         <span id="messageCount" style="color: #666; margin-left: 1rem;">0 messages</span>
                     </div>
                     <div class="control-buttons">
-                        <button onclick="clearLogs()">🗑️ Clear</button>
-                        <button onclick="toggleAutoScroll()" id="autoScrollBtn">📜 Auto: ON</button>
-                        <button onclick="downloadLogs()">💾 Download</button>
-                        <button onclick="disconnect()">❌ Disconnect</button>
+                        <button onclick="clearLogs()">Clear</button>
+                        <button onclick="toggleAutoScroll()" id="autoScrollBtn">Auto: ON</button>
+                        <button onclick="downloadLogs()">Download</button>
+                        <button onclick="disconnect()">Disconnect</button>
                     </div>
                 </div>
 
@@ -375,21 +386,38 @@
         let autoScroll = true;
         let logs = [];
         let connectionTime = null;
+        let lastHeartbeat = null;
+        let heartbeatCheckInterval = null;
 
         // Initialize AnsiUp for ANSI color support
-        const ansiUp = new AnsiUp.default();
+        let ansiUp;
+        try {
+            ansiUp = new AnsiUp.default();
+        } catch (e) {
+            console.log('AnsiUp initialization failed, trying alternative:', e);
+            // Try alternative initialization
+            if (typeof AnsiUp !== 'undefined') {
+                ansiUp = new AnsiUp();
+            }
+        }
 
-        // Check URL parameters for auto-connect
+        // Check URL parameters
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const device = urlParams.get('device');
             const session = urlParams.get('session');
 
+            console.log('URL params check:', { device, session });
+
             if (device && session) {
+                console.log('Auto-connecting with:', device, session);
                 document.getElementById('deviceId').value = device;
                 document.getElementById('sessionId').value = session;
                 // Auto-connect after a short delay
-                setTimeout(connectToMQTT, 500);
+                setTimeout(() => {
+                    console.log('Triggering auto-connect...');
+                    connectToMQTT();
+                }, 500);
             }
         });
 
@@ -398,14 +426,14 @@
             const sessionId = document.getElementById('sessionId').value.trim();
 
             if (!deviceId || !sessionId) {
-                alert('⚠️ Please enter both Device ID and Session ID');
+                alert('Please enter both Device ID and Session ID');
                 return;
             }
 
             // Update button
             const connectBtn = document.getElementById('connectBtn');
             connectBtn.disabled = true;
-            connectBtn.textContent = '⏳ Connecting...';
+            connectBtn.textContent = 'Connecting...';
 
             // Prepare connection
             const topic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}`;
@@ -435,43 +463,117 @@
                 // Update UI
                 document.getElementById('connectionPanel').style.display = 'none';
                 document.getElementById('monitorPanel').style.display = 'block';
-                updateStatus('Connected', true);
+                updateStatus('Waiting for device...', true);
 
-                // Subscribe to topic
+                // Subscribe to main topic
                 client.subscribe(topic, { qos: 0 }, (err) => {
                     if (err) {
                         console.error('Subscribe error:', err);
-                        addLog('❌ Failed to subscribe: ' + err.message, 'error');
+                        addLog('Failed to subscribe: ' + err.message, 'error');
                     } else {
                         console.log('Subscribed to:', topic);
-                        addLog('✅ Connected to HiveMQ Cloud', 'success');
-                        addLog(`📡 Monitoring: ${deviceId}/${sessionId}`, 'info');
-                        addLog('⏳ Waiting for serial data...', 'info');
+                        addLog('Connected to HiveMQ Cloud', 'success');
+                        addLog(`Monitoring: ${deviceId}/${sessionId}`, 'info');
+                        addLog('Waiting for serial data...', 'info');
+                    }
+                });
+
+                // Subscribe to device info topic
+                const infoTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/info`;
+                client.subscribe(infoTopic, { qos: 0 }, (err) => {
+                    if (err) {
+                        console.error('Info subscribe error:', err);
+                    } else {
+                        console.log('Subscribed to device info:', infoTopic);
+                    }
+                });
+
+                // Subscribe to status topic
+                const statusTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/status`;
+                client.subscribe(statusTopic, { qos: 0 }, (err) => {
+                    if (err) {
+                        console.error('Status subscribe error:', err);
+                    } else {
+                        console.log('Subscribed to device status:', statusTopic);
+                        addLog(`Monitoring status: ${statusTopic}`, 'info');
                     }
                 });
 
                 // Reset button
                 connectBtn.disabled = false;
-                connectBtn.textContent = '🚀 Connect to Live Stream';
+                connectBtn.textContent = 'Connect to Live Stream';
             });
 
             // Handle incoming messages
             client.on('message', (topic, payload) => {
                 const message = payload.toString();
-                addLog(message);
-                messageCount++;
-                document.getElementById('messageCount').textContent = `${messageCount} messages`;
+
+                // Check message type based on topic ending
+                if (topic.endsWith('/status')) {
+                    // Handle status message
+                    console.log('Status message received:', message);
+                    if (message === 'connected') {
+                        lastHeartbeat = Date.now();
+                        updateStatus('Device Online', true);
+
+                        // Start heartbeat monitoring if not already started
+                        if (!heartbeatCheckInterval) {
+                            heartbeatCheckInterval = setInterval(() => {
+                                if (lastHeartbeat && (Date.now() - lastHeartbeat > 25000)) {
+                                    // No heartbeat for 25 seconds, consider device offline
+                                    updateStatus('Device Offline', false);
+                                    addLog('📱 Android app disconnected (timeout)', 'error');
+                                    document.getElementById('deviceInfo').textContent = '';
+                                    lastHeartbeat = null;
+                                }
+                            }, 5000); // Check every 5 seconds
+
+                            addLog('📱 Android app connected', 'success');
+                        }
+                    } else if (message === 'disconnected') {
+                        updateStatus('Device Offline', false);
+                        addLog('📱 Android app disconnected', 'error');
+                        // Clear device info when disconnected
+                        document.getElementById('deviceInfo').textContent = '';
+                        lastHeartbeat = null;
+                    } else if (message === '') {
+                        // Empty message means retained clear
+                        console.log('Retained status cleared');
+                    } else {
+                        addLog(`Unknown status: ${message}`, 'warning');
+                    }
+                } else if (topic.endsWith('/info')) {
+                    // Parse device info format: "deviceName|batteryPct"
+                    const parts = message.split('|');
+                    if (parts.length === 2) {
+                        const deviceName = parts[0];
+                        const batteryPct = parts[1];
+
+                        // Update device info display
+                        const deviceInfoEl = document.getElementById('deviceInfo');
+                        if (batteryPct !== '-1') {
+                            deviceInfoEl.textContent = `| ${deviceName} (${batteryPct}% Battery)`;
+                        } else {
+                            deviceInfoEl.textContent = `| ${deviceName}`;
+                        }
+                    }
+                } else {
+                    // Regular serial data message
+                    addLog(message);
+                    messageCount++;
+                    document.getElementById('messageCount').textContent = `${messageCount} messages`;
+                }
             });
 
             // Connection error
             client.on('error', (err) => {
                 console.error('Connection error:', err);
                 updateStatus('Error', false);
-                addLog('❌ Connection error: ' + err.message, 'error');
+                addLog('Connection error: ' + err.message, 'error');
 
                 // Reset button
                 connectBtn.disabled = false;
-                connectBtn.textContent = '🚀 Connect to Live Stream';
+                connectBtn.textContent = 'Connect to Live Stream';
             });
 
             // Connection lost
@@ -490,6 +592,13 @@
                 client.end();
                 client = null;
             }
+
+            // Clear heartbeat monitoring
+            if (heartbeatCheckInterval) {
+                clearInterval(heartbeatCheckInterval);
+                heartbeatCheckInterval = null;
+            }
+            lastHeartbeat = null;
 
             // Reset UI
             document.getElementById('connectionPanel').style.display = 'block';
@@ -519,21 +628,29 @@
                 logLine.classList.add(type);
             }
 
-            // Convert ANSI codes to HTML
-            const htmlMessage = ansiUp.ansi_to_html(message);
+            // Convert ANSI codes to HTML if ansiUp is available
+            let htmlMessage = message;
+            if (ansiUp && ansiUp.ansi_to_html) {
+                try {
+                    htmlMessage = ansiUp.ansi_to_html(message);
+                } catch (e) {
+                    console.log('ANSI conversion failed:', e);
+                    htmlMessage = message;
+                }
+            }
 
-            // Set the HTML content (no timestamp)
+            // Set the content (no timestamp)
             logLine.innerHTML = htmlMessage;
 
             // Auto-detect type only if no ANSI colors and no type specified
             if (!type && !message.includes('\x1b[')) {
-                if (message.includes('ERROR') || message.includes('❌')) {
+                if (message.includes('ERROR')) {
                     logLine.classList.add('error');
-                } else if (message.includes('SUCCESS') || message.includes('✅')) {
+                } else if (message.includes('SUCCESS')) {
                     logLine.classList.add('success');
-                } else if (message.includes('WARNING') || message.includes('⚠️')) {
+                } else if (message.includes('WARNING')) {
                     logLine.classList.add('warning');
-                } else if (message.includes('INFO') || message.includes('📡') || message.includes('📌')) {
+                } else if (message.includes('INFO')) {
                     logLine.classList.add('info');
                 }
             }
@@ -556,7 +673,7 @@
         function toggleAutoScroll() {
             autoScroll = !autoScroll;
             const btn = document.getElementById('autoScrollBtn');
-            btn.textContent = `📜 Auto: ${autoScroll ? 'ON' : 'OFF'}`;
+            btn.textContent = `Auto: ${autoScroll ? 'ON' : 'OFF'}`;
 
             if (autoScroll) {
                 const console = document.getElementById('console');
@@ -566,7 +683,7 @@
 
         function downloadLogs() {
             if (logs.length === 0) {
-                alert('📭 No logs to download');
+                alert('No logs to download');
                 return;
             }
 
