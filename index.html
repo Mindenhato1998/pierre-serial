@@ -19,14 +19,13 @@
             display: flex;
             flex-direction: column;
             margin: 0;
+            overflow-x: hidden;
         }
 
         .container {
-            max-width: 1600px;
-            margin: 0 auto;
-            width: 100%;
-            padding: 0.75rem;
-            height: 100vh;
+            width: calc(100% - 2rem);
+            min-height: calc(100vh - 2rem);
+            margin: 1rem;
             display: flex;
             flex-direction: column;
         }
@@ -178,7 +177,7 @@
             top: 60px;
             left: 0;
             right: 0;
-            bottom: 80px;
+            bottom: 0;
             overflow-y: auto;
             padding: 1rem;
             font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
@@ -237,7 +236,7 @@
             color: #146e89;
             font-size: 0.75rem;
             border: 2px solid rgba(255, 255, 255, 0.9);
-            font-weight: 500;
+            font-weight: 700;
         }
 
         .control-buttons button:hover {
@@ -245,40 +244,7 @@
             border-color: #ffffff;
         }
 
-        .info-panel {
-            background: #0f5670;
-            border: 2px solid #146e89;
-            border-radius: 8px;
-            padding: 0.5rem;
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.9);
-            position: absolute;
-            bottom: 1rem;
-            left: 1rem;
-            right: 1rem;
-            z-index: 10;
-        }
 
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 0.5rem;
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .info-label {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .info-value {
-            color: #ffffff;
-            font-weight: 600;
-        }
 
         #monitorPanel {
             flex: 1;
@@ -289,6 +255,124 @@
 
         #connectionPanel {
             flex-shrink: 0;
+        }
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .container {
+                width: calc(100% - 1rem);
+                min-height: calc(100vh - 1rem);
+                margin: 0.5rem;
+            }
+
+            h1 {
+                font-size: 1.2rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .main-card {
+                padding: 0.75rem;
+                border-radius: 8px;
+                min-height: calc(100vh - 2rem);
+            }
+
+            .connection-panel {
+                padding: 0.75rem;
+            }
+
+            .status-bar {
+                padding: 0.5rem;
+                flex-direction: column;
+                gap: 0.75rem;
+                align-items: stretch;
+            }
+
+            .status {
+                font-size: 0.85rem;
+                justify-content: center;
+            }
+
+            .control-buttons {
+                width: 100%;
+                justify-content: space-around;
+            }
+
+            .control-buttons button {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.7rem;
+                flex: 1;
+                max-width: 80px;
+            }
+
+
+            .console {
+                position: relative;
+                top: auto;
+                bottom: auto;
+                left: auto;
+                right: auto;
+                margin: 0.5rem 0;
+                padding: 0.5rem;
+                font-size: 0.75rem;
+                line-height: 1.2;
+                flex: 1;
+                min-height: 100px;
+            }
+
+            input {
+                padding: 0.5rem;
+                font-size: 0.875rem;
+            }
+
+            button {
+                padding: 0.6rem 1rem;
+                font-size: 0.875rem;
+            }
+
+            label {
+                font-size: 0.85rem;
+            }
+
+            #deviceInfo {
+                font-size: 0.75rem;
+                display: block;
+                text-align: center;
+                margin-top: 0.25rem;
+            }
+
+            #messageCount {
+                display: block;
+                text-align: center;
+                margin-top: 0.25rem;
+            }
+
+            #monitorPanel {
+                display: flex !important;
+                flex-direction: column;
+                height: 100%;
+            }
+
+            .status-bar {
+                flex-shrink: 0;
+            }
+
+            .console {
+                flex: 1;
+                overflow-y: auto;
+            }
+        }
+
+        /* Very small screens */
+        @media (max-width: 380px) {
+            .control-buttons button {
+                padding: 0.3rem 0.4rem;
+                font-size: 0.65rem;
+                max-width: 70px;
+            }
+
+            h1 {
+                font-size: 1rem;
+            }
         }
 
     </style>
@@ -329,6 +413,7 @@
                         <span id="statusText">Disconnected</span>
                         <span id="deviceInfo" style="color: #ffffff; margin-left: 1rem;"></span>
                         <span id="messageCount" style="color: #666; margin-left: 1rem;">0 messages</span>
+                        <span id="connTime" style="color: #999; margin-left: 1rem;">-</span>
                     </div>
                     <div class="control-buttons">
                         <button onclick="clearLogs()">Clear</button>
@@ -342,26 +427,6 @@
                     <div class="no-data">Waiting for serial data...</div>
                 </div>
 
-                <div class="info-panel">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">Topic:</span>
-                            <span class="info-value" id="topicInfo">-</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Broker:</span>
-                            <span class="info-value">HiveMQ Cloud EU</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Protocol:</span>
-                            <span class="info-value">MQTT over WebSocket</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Connection Time:</span>
-                            <span class="info-value" id="connTime">-</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -440,7 +505,6 @@
             const clientId = 'web_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
 
             // Update UI
-            document.getElementById('topicInfo').textContent = topic;
             updateStatus('Connecting...', false);
 
             // Create MQTT client
