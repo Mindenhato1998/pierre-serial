@@ -417,6 +417,7 @@
                     </div>
                     <div class="control-buttons">
                         <button onclick="clearLogs()">Clear</button>
+                        <button onclick="resetPierre()">Reset Pierre</button>
                         <button onclick="toggleAutoScroll()" id="autoScrollBtn">Auto: ON</button>
                         <button onclick="downloadLogs()">Download</button>
                         <button onclick="disconnect()">Disconnect</button>
@@ -798,6 +799,36 @@
 
         // Update connection time every second
         setInterval(updateConnectionTime, 1000);
+
+        function resetPierre() {
+            if (!client) {
+                alert('Not connected to device');
+                return;
+            }
+
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const sessionId = document.getElementById('sessionId').value.trim();
+
+            if (!deviceId || !sessionId) {
+                alert('Device or session ID missing');
+                return;
+            }
+
+            // Send reset command via serial topic
+            const serialTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}`;
+            const resetCommand = 'RESET_ESP32\n';
+
+            client.publish(serialTopic, resetCommand, { qos: 1 }, (err) => {
+                if (err) {
+                    console.error('Reset command error:', err);
+                    addLog('❌ Failed to send reset command: ' + err.message, 'error');
+                } else {
+                    console.log('Reset command sent');
+                    addLog('🔄 Pierre reset command sent', 'warning');
+                    addLog('⏳ Waiting for ESP32 to restart...', 'info');
+                }
+            });
+        }
 
         // Clean up on page unload
         window.addEventListener('beforeunload', () => {
