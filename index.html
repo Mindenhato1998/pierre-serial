@@ -814,14 +814,11 @@
                 return;
             }
 
-            // Send reset command to control topic (like Android app expects)
-            const controlTopic = `pierre/control/${deviceId}/${sessionId}`;
-            const resetCommand = {
-                command: 'reset_controller',
-                timestamp: new Date().toISOString()
-            };
+            // Send reset command via serial topic (simpler approach)
+            const serialTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}`;
+            const resetCommand = 'RESET_ESP32\n';
 
-            client.publish(controlTopic, JSON.stringify(resetCommand), { qos: 1 }, (err) => {
+            client.publish(serialTopic, resetCommand, { qos: 1 }, (err) => {
                 if (err) {
                     console.error('Reset command error:', err);
                     addLog('❌ Failed to send reset command: ' + err.message, 'error');
