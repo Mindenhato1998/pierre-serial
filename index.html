@@ -379,7 +379,7 @@
         // Initialize AnsiUp for ANSI color support
         const ansiUp = new AnsiUp.default();
 
-        // Check URL parameters
+        // Check URL parameters for auto-connect
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const device = urlParams.get('device');
