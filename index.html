@@ -814,16 +814,16 @@
                 return;
             }
 
-            // Send reset command via serial topic (simpler approach)
-            const serialTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}`;
-            const resetCommand = 'RESET_ESP32\n';
+            // Send reset command via control topic (proper MQTT control)
+            const controlTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/control`;
+            const resetCommand = JSON.stringify({ command: 'reset_controller' });
 
-            client.publish(serialTopic, resetCommand, { qos: 1 }, (err) => {
+            client.publish(controlTopic, resetCommand, { qos: 1 }, (err) => {
                 if (err) {
                     console.error('Reset command error:', err);
                     addLog('❌ Failed to send reset command: ' + err.message, 'error');
                 } else {
-                    console.log('Reset command sent');
+                    console.log('Reset command sent via control topic');
                     addLog('🔄 Pierre reset command sent', 'warning');
                     addLog('⏳ Waiting for ESP32 to restart...', 'info');
                 }
