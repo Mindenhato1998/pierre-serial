@@ -321,7 +321,6 @@
                     </div>
                     <div class="control-buttons">
                         <button onclick="clearLogs()">🗑️ Clear</button>
-                        <button onclick="resetController()">🔄 Controller Reset</button>
                         <button onclick="toggleAutoScroll()" id="autoScrollBtn">📜 Auto: ON</button>
                         <button onclick="downloadLogs()">💾 Download</button>
                         <button onclick="disconnect()">❌ Disconnect</button>
@@ -618,40 +617,6 @@
 
         // Update connection time every second
         setInterval(updateConnectionTime, 1000);
-
-        function resetController() {
-            if (!client) {
-                alert('⚠️ Not connected to device');
-                return;
-            }
-
-            // Get device and session IDs
-            const deviceId = document.getElementById('deviceId').value.trim();
-            const sessionId = document.getElementById('sessionId').value.trim();
-
-            if (!deviceId || !sessionId) {
-                alert('⚠️ Device or session ID missing');
-                return;
-            }
-
-            // Publish reset command to the control topic
-            const controlTopic = `pierre/control/${deviceId}/${sessionId}`;
-            const resetCommand = {
-                command: 'reset_controller',
-                timestamp: new Date().toISOString()
-            };
-
-            client.publish(controlTopic, JSON.stringify(resetCommand), { qos: 1 }, (err) => {
-                if (err) {
-                    console.error('Reset command error:', err);
-                    addLog('❌ Failed to send reset command: ' + err.message, 'error');
-                } else {
-                    console.log('Reset command sent');
-                    addLog('🔄 Controller reset command sent', 'warning');
-                    addLog('⏳ Waiting for ESP32 to restart...', 'info');
-                }
-            });
-        }
 
         // Clean up on page unload
         window.addEventListener('beforeunload', () => {
