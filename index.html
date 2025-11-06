@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pierre ESP32 Serial Viewer - HiveMQ Live</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 1rem;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+
+        .main-card {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .connection-panel {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            background: #1a1a1a;
+            border: 2px solid #444;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-family: monospace;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-bar {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+        }
+
+        .status-dot.disconnected {
+            background: #f44336;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.9); }
+        }
+
+        .console {
+            background: #0a0a0a;
+            border: 2px solid #2d2d2d;
+            border-radius: 10px;
+            height: 500px;
+            overflow-y: auto;
+            padding: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .log-line {
+            margin-bottom: 3px;
+            padding: 3px 6px;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-line:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .log-line.error { color: #ff6b6b; }
+        .log-line.success { color: #51cf66; }
+        .log-line.warning { color: #ffd43b; }
+        .log-line.info { color: #74c0fc; }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .control-buttons button {
+            padding: 0.5rem 1rem;
+            min-width: auto;
+            flex: none;
+            background: #4a5568;
+            font-size: 0.85rem;
+        }
+
+        .control-buttons button:hover {
+            background: #5a6578;
+        }
+
+        .info-panel {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .info-label {
+            color: #666;
+        }
+
+        .info-value {
+            color: #e0e0e0;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .console {
+                height: 400px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔌 Pierre ESP32 Serial Viewer</h1>
+            <div class="subtitle">Real-time serial monitoring via HiveMQ Cloud</div>
+        </div>
+
+        <div class="main-card">
+            <div class="connection-panel" id="connectionPanel">
+                <h2 style="margin-bottom: 1rem;">📡 Connect to Live Stream</h2>
+
+                <div class="input-group">
+                    <label for="deviceId">Device ID (from Android app)</label>
+                    <input type="text" id="deviceId" placeholder="e.g., abc123def456">
+                </div>
+
+                <div class="input-group">
+                    <label for="sessionId">Session ID (from Android app)</label>
+                    <input type="text" id="sessionId" placeholder="e.g., 12345678">
+                </div>
+
+                <div class="button-group">
+                    <button onclick="connectToMQTT()" id="connectBtn">🚀 Connect to Live Stream</button>
+                </div>
+
+                <div style="margin-top: 1rem; padding: 1rem; background: #1a1a1a; border-radius: 8px;">
+                    <p style="color: #888; font-size: 0.85rem;">
+                        💡 <strong>Tip:</strong> Get these IDs from the Pierre Flasher app on your Android device.
+                        Click the green Live Share button in Serial Monitor to copy the share URL.
+                    </p>
+                </div>
+            </div>
+
+            <div id="monitorPanel" style="display: none;">
+                <div class="status-bar">
+                    <div class="status">
+                        <div id="statusDot" class="status-dot disconnected"></div>
+                        <span id="statusText">Disconnected</span>
+                        <span id="messageCount" style="color: #666; margin-left: 1rem;">0 messages</span>
+                    </div>
+                    <div class="control-buttons">
+                        <button onclick="clearLogs()">🗑️ Clear</button>
+                        <button onclick="resetController()">🔄 Controller Reset</button>
+                        <button onclick="toggleAutoScroll()" id="autoScrollBtn">📜 Auto: ON</button>
+                        <button onclick="downloadLogs()">💾 Download</button>
+                        <button onclick="disconnect()">❌ Disconnect</button>
+                    </div>
+                </div>
+
+                <div class="console" id="console">
+                    <div class="no-data">Waiting for serial data...</div>
+                </div>
+
+                <div class="info-panel">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Topic:</span>
+                            <span class="info-value" id="topicInfo">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Broker:</span>
+                            <span class="info-value">HiveMQ Cloud EU</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Protocol:</span>
+                            <span class="info-value">MQTT over WebSocket</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Connection Time:</span>
+                            <span class="info-value" id="connTime">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MQTT.js from CDN -->
+    <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
+    <!-- AnsiUp for ANSI color support -->
+    <script src="https://cdn.jsdelivr.net/npm/ansi_up@5.1.0/ansi_up.min.js"></script>
+
+    <script>
+        // HiveMQ Configuration
+        const MQTT_CONFIG = {
+            broker: 'wss://0c1bf62a21e94682adf340b8a2d3fe04.s1.eu.hivemq.cloud:8884/mqtt',
+            username: 'pierreflasher',
+            password: 'Pierre2k23',
+            topicPrefix: 'pierre/serial'
+        };
+
+        // State
+        let client = null;
+        let messageCount = 0;
+        let autoScroll = true;
+        let logs = [];
+        let connectionTime = null;
+
+        // Initialize AnsiUp for ANSI color support
+        const ansiUp = new AnsiUp.default();
+
+        // Check URL parameters
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const device = urlParams.get('device');
+            const session = urlParams.get('session');
+
+            if (device && session) {
+                document.getElementById('deviceId').value = device;
+                document.getElementById('sessionId').value = session;
+                // Auto-connect after a short delay
+                setTimeout(connectToMQTT, 500);
+            }
+        });
+
+        function connectToMQTT() {
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const sessionId = document.getElementById('sessionId').value.trim();
+
+            if (!deviceId || !sessionId) {
+                alert('⚠️ Please enter both Device ID and Session ID');
+                return;
+            }
+
+            // Update button
+            const connectBtn = document.getElementById('connectBtn');
+            connectBtn.disabled = true;
+            connectBtn.textContent = '⏳ Connecting...';
+
+            // Prepare connection
+            const topic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}`;
+            const clientId = 'web_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
+            // Update UI
+            document.getElementById('topicInfo').textContent = topic;
+            updateStatus('Connecting...', false);
+
+            // Create MQTT client
+            client = mqtt.connect(MQTT_CONFIG.broker, {
+                clientId: clientId,
+                username: MQTT_CONFIG.username,
+                password: MQTT_CONFIG.password,
+                clean: true,
+                connectTimeout: 30000,
+                reconnectPeriod: 1000,
+                keepalive: 60
+            });
+
+            // Connection successful
+            client.on('connect', () => {
+                console.log('Connected to HiveMQ Cloud');
+                connectionTime = new Date();
+                updateConnectionTime();
+
+                // Update UI
+                document.getElementById('connectionPanel').style.display = 'none';
+                document.getElementById('monitorPanel').style.display = 'block';
+                updateStatus('Connected', true);
+
+                // Subscribe to topic
+                client.subscribe(topic, { qos: 0 }, (err) => {
+                    if (err) {
+                        console.error('Subscribe error:', err);
+                        addLog('❌ Failed to subscribe: ' + err.message, 'error');
+                    } else {
+                        console.log('Subscribed to:', topic);
+                        addLog('✅ Connected to HiveMQ Cloud', 'success');
+                        addLog(`📡 Monitoring: ${deviceId}/${sessionId}`, 'info');
+                        addLog('⏳ Waiting for serial data...', 'info');
+                    }
+                });
+
+                // Reset button
+                connectBtn.disabled = false;
+                connectBtn.textContent = '🚀 Connect to Live Stream';
+            });
+
+            // Handle incoming messages
+            client.on('message', (topic, payload) => {
+                const message = payload.toString();
+                addLog(message);
+                messageCount++;
+                document.getElementById('messageCount').textContent = `${messageCount} messages`;
+            });
+
+            // Connection error
+            client.on('error', (err) => {
+                console.error('Connection error:', err);
+                updateStatus('Error', false);
+                addLog('❌ Connection error: ' + err.message, 'error');
+
+                // Reset button
+                connectBtn.disabled = false;
+                connectBtn.textContent = '🚀 Connect to Live Stream';
+            });
+
+            // Connection lost
+            client.on('offline', () => {
+                updateStatus('Offline', false);
+            });
+
+            // Reconnecting
+            client.on('reconnect', () => {
+                updateStatus('Reconnecting...', false);
+            });
+        }
+
+        function disconnect() {
+            if (client) {
+                client.end();
+                client = null;
+            }
+
+            // Reset UI
+            document.getElementById('connectionPanel').style.display = 'block';
+            document.getElementById('monitorPanel').style.display = 'none';
+
+            // Clear data
+            clearLogs();
+            messageCount = 0;
+            connectionTime = null;
+            document.getElementById('messageCount').textContent = '0 messages';
+            updateStatus('Disconnected', false);
+        }
+
+        function addLog(message, type = '') {
+            const console = document.getElementById('console');
+
+            // Remove "no data" message
+            const noData = console.querySelector('.no-data');
+            if (noData) {
+                noData.remove();
+            }
+
+            // Create log line
+            const logLine = document.createElement('div');
+            logLine.className = 'log-line';
+            if (type) {
+                logLine.classList.add(type);
+            }
+
+            // Convert ANSI codes to HTML
+            const htmlMessage = ansiUp.ansi_to_html(message);
+
+            // Set the HTML content (no timestamp)
+            logLine.innerHTML = htmlMessage;
+
+            // Auto-detect type only if no ANSI colors and no type specified
+            if (!type && !message.includes('\x1b[')) {
+                if (message.includes('ERROR') || message.includes('❌')) {
+                    logLine.classList.add('error');
+                } else if (message.includes('SUCCESS') || message.includes('✅')) {
+                    logLine.classList.add('success');
+                } else if (message.includes('WARNING') || message.includes('⚠️')) {
+                    logLine.classList.add('warning');
+                } else if (message.includes('INFO') || message.includes('📡') || message.includes('📌')) {
+                    logLine.classList.add('info');
+                }
+            }
+
+            console.appendChild(logLine);
+            logs.push(message); // Store raw message without timestamp
+
+            // Auto-scroll
+            if (autoScroll) {
+                console.scrollTop = console.scrollHeight;
+            }
+        }
+
+        function clearLogs() {
+            const console = document.getElementById('console');
+            console.innerHTML = '<div class="no-data">Waiting for serial data...</div>';
+            logs = [];
+        }
+
+        function toggleAutoScroll() {
+            autoScroll = !autoScroll;
+            const btn = document.getElementById('autoScrollBtn');
+            btn.textContent = `📜 Auto: ${autoScroll ? 'ON' : 'OFF'}`;
+
+            if (autoScroll) {
+                const console = document.getElementById('console');
+                console.scrollTop = console.scrollHeight;
+            }
+        }
+
+        function downloadLogs() {
+            if (logs.length === 0) {
+                alert('📭 No logs to download');
+                return;
+            }
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `serial_logs_${timestamp}.txt`;
+            const content = logs.join('\n');
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function updateStatus(text, connected) {
+            document.getElementById('statusText').textContent = text;
+            const dot = document.getElementById('statusDot');
+
+            if (connected) {
+                dot.classList.remove('disconnected');
+                dot.classList.add('connected');
+            } else {
+                dot.classList.remove('connected');
+                dot.classList.add('disconnected');
+            }
+        }
+
+        function updateConnectionTime() {
+            if (!connectionTime) return;
+
+            const now = new Date();
+            const diff = Math.floor((now - connectionTime) / 1000);
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+
+            let timeStr = '';
+            if (hours > 0) timeStr += `${hours}h `;
+            if (minutes > 0) timeStr += `${minutes}m `;
+            timeStr += `${seconds}s`;
+
+            document.getElementById('connTime').textContent = timeStr;
+        }
+
+        // Update connection time every second
+        setInterval(updateConnectionTime, 1000);
+
+        function resetController() {
+            if (!client) {
+                alert('⚠️ Not connected to device');
+                return;
+            }
+
+            // Get device and session IDs
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const sessionId = document.getElementById('sessionId').value.trim();
+
+            if (!deviceId || !sessionId) {
+                alert('⚠️ Device or session ID missing');
+                return;
+            }
+
+            // Publish reset command to the control topic
+            const controlTopic = `pierre/control/${deviceId}/${sessionId}`;
+            const resetCommand = {
+                command: 'reset_controller',
+                timestamp: new Date().toISOString()
+            };
+
+            client.publish(controlTopic, JSON.stringify(resetCommand), { qos: 1 }, (err) => {
+                if (err) {
+                    console.error('Reset command error:', err);
+                    addLog('❌ Failed to send reset command: ' + err.message, 'error');
+                } else {
+                    console.log('Reset command sent');
+                    addLog('🔄 Controller reset command sent', 'warning');
+                    addLog('⏳ Waiting for ESP32 to restart...', 'info');
+                }
+            });
+        }
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (client) {
+                client.end();
+            }
+        });
+    </script>
+</body>
+</html>
