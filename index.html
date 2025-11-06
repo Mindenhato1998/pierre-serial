@@ -801,7 +801,12 @@
         setInterval(updateConnectionTime, 1000);
 
         function resetPierre() {
+            console.log('🔄 Reset Pierre button clicked!');
+            addLog('🔄 RESET PIERRE BUTTON CLICKED!', 'info');
+
             if (!client) {
+                console.log('❌ No MQTT client connection');
+                addLog('❌ Not connected to MQTT broker', 'error');
                 alert('Not connected to device');
                 return;
             }
@@ -809,7 +814,14 @@
             const deviceId = document.getElementById('deviceId').value.trim();
             const sessionId = document.getElementById('sessionId').value.trim();
 
+            console.log('📍 Device ID:', deviceId);
+            console.log('📍 Session ID:', sessionId);
+            addLog(`📍 Using Device ID: ${deviceId}`, 'info');
+            addLog(`📍 Using Session ID: ${sessionId}`, 'info');
+
             if (!deviceId || !sessionId) {
+                console.log('❌ Missing Device ID or Session ID');
+                addLog('❌ Device or session ID missing', 'error');
                 alert('Device or session ID missing');
                 return;
             }
@@ -818,14 +830,19 @@
             const controlTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/control`;
             const resetCommand = JSON.stringify({ command: 'reset_controller' });
 
+            console.log('📡 Sending MQTT command to topic:', controlTopic);
+            console.log('📡 Command payload:', resetCommand);
+            addLog(`📡 Sending to topic: ${controlTopic}`, 'info');
+            addLog(`📡 Command: ${resetCommand}`, 'info');
+
             client.publish(controlTopic, resetCommand, { qos: 1 }, (err) => {
                 if (err) {
-                    console.error('Reset command error:', err);
+                    console.error('❌ Reset command error:', err);
                     addLog('❌ Failed to send reset command: ' + err.message, 'error');
                 } else {
-                    console.log('Reset command sent via control topic');
-                    addLog('🔄 Pierre reset command sent', 'warning');
-                    addLog('⏳ Waiting for ESP32 to restart...', 'info');
+                    console.log('✅ Reset command sent successfully via control topic');
+                    addLog('✅ RESET COMMAND SENT SUCCESSFULLY', 'success');
+                    addLog('⏳ Waiting for Android app to process...', 'info');
                 }
             });
         }
