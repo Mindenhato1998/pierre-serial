@@ -420,7 +420,6 @@
                         <button onclick="resetPierre()">Reset Pierre</button>
                         <button onclick="toggleAutoScroll()" id="autoScrollBtn">Auto: ON</button>
                         <button onclick="downloadLogs()">Download</button>
-                        <button onclick="disconnect()">Disconnect</button>
                     </div>
                 </div>
 
@@ -652,30 +651,6 @@
             });
         }
 
-        function disconnect() {
-            if (client) {
-                client.end();
-                client = null;
-            }
-
-            // Clear heartbeat monitoring
-            if (heartbeatCheckInterval) {
-                clearInterval(heartbeatCheckInterval);
-                heartbeatCheckInterval = null;
-            }
-            lastHeartbeat = null;
-
-            // Reset UI
-            document.getElementById('connectionPanel').style.display = 'block';
-            document.getElementById('monitorPanel').style.display = 'none';
-
-            // Clear data
-            clearLogs();
-            messageCount = 0;
-            connectionTime = null;
-            document.getElementById('messageCount').textContent = '0 messages';
-            updateStatus('Disconnected', false);
-        }
 
         function addLog(message, type = '') {
             const console = document.getElementById('console');
