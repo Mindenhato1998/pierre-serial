@@ -418,7 +418,7 @@
                     <div class="control-buttons">
                         <button onclick="clearLogs()">Clear</button>
                         <button onclick="resetPierre()">Reset Pierre</button>
-                        <button onclick="toggleAutoScroll()" id="autoScrollBtn">Auto: ON</button>
+                        <button onclick="toggleAutoScroll()" id="autoScrollBtn">Auto Scroll: ON</button>
                         <button onclick="downloadLogs()">Download</button>
                     </div>
                 </div>
@@ -713,7 +713,7 @@
         function toggleAutoScroll() {
             autoScroll = !autoScroll;
             const btn = document.getElementById('autoScrollBtn');
-            btn.textContent = `Auto: ${autoScroll ? 'ON' : 'OFF'}`;
+            btn.textContent = `Auto Scroll: ${autoScroll ? 'ON' : 'OFF'}`;
 
             if (autoScroll) {
                 const console = document.getElementById('console');
