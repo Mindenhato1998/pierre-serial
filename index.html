@@ -852,21 +852,29 @@
         }
 
         async function resetController() {
-            if (!port) {
-                alert('No serial device connected');
+            // Send reset command via MQTT to Android app
+            if (!client || !client.connected) {
+                alert('Not connected to MQTT. Please connect first.');
+                return;
+            }
+
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const sessionId = document.getElementById('sessionId').value.trim();
+
+            if (!deviceId || !sessionId) {
+                alert('Device ID and Session ID required');
                 return;
             }
 
             try {
-                // ESP32 reset sequence: DTR low + RTS high, then DTR high + RTS low
-                await port.setSignals({ dataTerminalReady: false, requestToSend: true });
-                await new Promise(resolve => setTimeout(resolve, 100));
-                await port.setSignals({ dataTerminalReady: true, requestToSend: false });
+                const controlTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/control`;
+                const resetMessage = JSON.stringify({ command: 'reset_controller' });
 
-                addLog('--- Controller Reset Sent ---', 'system');
+                client.publish(controlTopic, resetMessage, { qos: 0 });
+                addLog('--- Controller Reset Command Sent ---', 'system');
             } catch (err) {
-                console.error('Reset failed:', err);
-                addLog('Reset failed: ' + err.message, 'error');
+                console.error('Reset command failed:', err);
+                addLog('Reset command failed: ' + err.message, 'error');
             }
         }
 
