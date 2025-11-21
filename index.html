@@ -339,7 +339,9 @@
             }
 
             .console {
-                flex: 1;
+                height: 400px;
+                max-height: 400px;
+                flex: none;
                 margin: 0.25rem 0.375rem 0 0.375rem;
                 padding: 0.5rem;
                 font-size: 0.75rem;
@@ -347,7 +349,6 @@
                 overflow-y: auto;
                 overflow-x: hidden;
                 -webkit-overflow-scrolling: touch;
-                min-height: 200px;
                 position: relative !important;
                 top: auto !important;
                 left: auto !important;
@@ -509,6 +510,7 @@
                     </div>
                     <div class="control-buttons">
                         <button onclick="clearLogs()">Clear</button>
+                        <button onclick="resetController()">Controller Reset</button>
                         <button onclick="toggleAutoScroll()" id="autoScrollBtn">Auto Scroll: ON</button>
                         <button onclick="downloadLogs()">Download</button>
                     </div>
@@ -846,6 +848,25 @@
             if (autoScroll) {
                 const console = document.getElementById('console');
                 console.scrollTop = console.scrollHeight;
+            }
+        }
+
+        async function resetController() {
+            if (!port) {
+                alert('No serial device connected');
+                return;
+            }
+
+            try {
+                // ESP32 reset sequence: DTR low + RTS high, then DTR high + RTS low
+                await port.setSignals({ dataTerminalReady: false, requestToSend: true });
+                await new Promise(resolve => setTimeout(resolve, 100));
+                await port.setSignals({ dataTerminalReady: true, requestToSend: false });
+
+                addLog('--- Controller Reset Sent ---', 'system');
+            } catch (err) {
+                console.error('Reset failed:', err);
+                addLog('Reset failed: ' + err.message, 'error');
             }
         }
 
