@@ -339,9 +339,7 @@
             }
 
             .console {
-                height: 400px;
-                max-height: 400px;
-                flex: none;
+                flex: 1;
                 margin: 0.25rem 0.375rem 0 0.375rem;
                 padding: 0.5rem;
                 font-size: 0.75rem;
@@ -349,6 +347,7 @@
                 overflow-y: auto;
                 overflow-x: hidden;
                 -webkit-overflow-scrolling: touch;
+                min-height: 200px;
                 position: relative !important;
                 top: auto !important;
                 left: auto !important;
@@ -510,7 +509,6 @@
                     </div>
                     <div class="control-buttons">
                         <button onclick="clearLogs()">Clear</button>
-                        <button onclick="resetController()">Controller Reset</button>
                         <button onclick="toggleAutoScroll()" id="autoScrollBtn">Auto Scroll: ON</button>
                         <button onclick="downloadLogs()">Download</button>
                     </div>
@@ -848,33 +846,6 @@
             if (autoScroll) {
                 const console = document.getElementById('console');
                 console.scrollTop = console.scrollHeight;
-            }
-        }
-
-        async function resetController() {
-            // Send reset command via MQTT to Android app
-            if (!client || !client.connected) {
-                alert('Not connected to MQTT. Please connect first.');
-                return;
-            }
-
-            const deviceId = document.getElementById('deviceId').value.trim();
-            const sessionId = document.getElementById('sessionId').value.trim();
-
-            if (!deviceId || !sessionId) {
-                alert('Device ID and Session ID required');
-                return;
-            }
-
-            try {
-                const controlTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/control`;
-                const resetMessage = JSON.stringify({ command: 'reset_controller' });
-
-                client.publish(controlTopic, resetMessage, { qos: 0 });
-                addLog('--- Controller Reset Command Sent ---', 'system');
-            } catch (err) {
-                console.error('Reset command failed:', err);
-                addLog('Reset command failed: ' + err.message, 'error');
             }
         }
 
