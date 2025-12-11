@@ -801,23 +801,38 @@
                 return;
             }
 
-            // Send reset command via control topic (proper MQTT control)
-            const controlTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/control`;
-            const resetCommand = JSON.stringify({ command: 'reset_controller' });
+            // Send reset command as a special serial message that the app will recognize
+            // Using the data topic that the app already publishes to
+            const dataTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/data`;
 
-            console.log('📡 Sending MQTT command to topic:', controlTopic);
-            console.log('📡 Command payload:', resetCommand);
-            addLog(`📡 Sending to topic: ${controlTopic}`, 'info');
-            addLog(`📡 Command: ${resetCommand}`, 'info');
+            // Special reset command format that the app can recognize
+            const resetMessage = '<<<SYSTEM_RESET_PIERRE>>>';
 
-            client.publish(controlTopic, resetCommand, { qos: 1 }, (err) => {
+            console.log('📡 Sending reset via data topic:', dataTopic);
+            console.log('📡 Command payload:', resetMessage);
+            addLog(`📡 Sending to topic: ${dataTopic}`, 'info');
+            addLog(`📡 Command: ${resetMessage}`, 'info');
+
+            // First method: Try the data topic (which app already uses)
+            client.publish(dataTopic, resetMessage, { qos: 1 }, (err) => {
                 if (err) {
                     console.error('❌ Reset command error:', err);
                     addLog('❌ Failed to send reset command: ' + err.message, 'error');
                 } else {
-                    console.log('✅ Reset command sent successfully via control topic');
-                    addLog('✅ RESET COMMAND SENT SUCCESSFULLY', 'success');
-                    addLog('⏳ Waiting for Android app to process...', 'info');
+                    console.log('✅ Reset command sent successfully');
+                    addLog('✅ RESET COMMAND SENT', 'success');
+
+                    // Also try sending a disconnect/reconnect signal
+                    setTimeout(() => {
+                        const statusTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/status`;
+                        client.publish(statusTopic, 'reset_requested', { qos: 1 }, (err) => {
+                            if (!err) {
+                                addLog('📡 Reset signal sent to status topic', 'info');
+                            }
+                        });
+                    }, 100);
+
+                    addLog('⏳ Sending reset signal to Android app...', 'info');
                 }
             });
         }
