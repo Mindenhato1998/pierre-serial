@@ -433,7 +433,7 @@
 
     <!-- Version number in bottom left corner -->
     <div style="position: fixed; bottom: 10px; left: 10px; background: #000; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; z-index: 1000; border: 1px solid #333;">
-        v1.0.3
+        v1.1.0
     </div>
 
     <!-- MQTT.js from CDN -->
@@ -806,46 +806,24 @@
                 return;
             }
 
-            // Send ESP32 reset command through the data channel
-            // The Android app will forward this to the ESP32 via serial
-            const dataTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/data`;
+            // Send reset command via control topic - Android app now listens to this!
+            const controlTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/control`;
+            const resetCommand = JSON.stringify({ command: 'reset_controller' });
 
-            // Standard ESP32 reset commands that the firmware might recognize
-            // Try multiple formats to maximize compatibility
-            const resetCommands = [
-                'RST',           // Simple reset command
-                '\x03\x03',      // Ctrl+C Ctrl+C (interrupt)
-                'RESET',         // Full word
-                'reset',         // Lowercase
-                'reboot',        // Alternative command
-                '+++RST',        // AT-style command
-                '\r\nRST\r\n'    // With line breaks
-            ];
+            console.log('📡 Sending MQTT reset command to topic:', controlTopic);
+            console.log('📡 Command payload:', resetCommand);
+            addLog(`📡 Sending reset command to ESP32...`, 'info');
 
-            addLog('🔄 Sending reset commands to ESP32...', 'info');
-
-            // Send each command with a small delay between them
-            resetCommands.forEach((cmd, index) => {
-                setTimeout(() => {
-                    client.publish(dataTopic, cmd, { qos: 1 }, (err) => {
-                        if (!err && index === 0) {
-                            console.log(`📡 Sent reset command: ${cmd}`);
-                            addLog('✅ Reset commands sent to ESP32', 'success');
-                            addLog('⏳ If your ESP32 firmware supports reset commands, it should restart now', 'info');
-                        }
-                    });
-                }, index * 100); // 100ms delay between commands
+            client.publish(controlTopic, resetCommand, { qos: 1 }, (err) => {
+                if (err) {
+                    console.error('❌ Reset command error:', err);
+                    addLog('❌ Failed to send reset command: ' + err.message, 'error');
+                } else {
+                    console.log('✅ Reset command sent successfully');
+                    addLog('✅ RESET COMMAND SENT', 'success');
+                    addLog('🔄 ESP32 will be reset via RTS pin...', 'info');
+                }
             });
-
-            // Also send a status marker
-            setTimeout(() => {
-                const statusTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/status`;
-                client.publish(statusTopic, 'reset_requested', { qos: 0 }, (err) => {
-                    if (!err) {
-                        console.log('📡 Reset status sent');
-                    }
-                });
-            }, resetCommands.length * 100);
         }
 
         // Clean up on page unload
