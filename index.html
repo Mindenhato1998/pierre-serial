@@ -432,8 +432,8 @@
     </div>
 
     <!-- Version number in bottom left corner -->
-    <div style="position: fixed; bottom: 10px; left: 10px; color: #666; font-size: 0.75rem; font-family: monospace; z-index: 1000;">
-        v1.0.0
+    <div style="position: fixed; bottom: 10px; left: 10px; background: #000; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; z-index: 1000; border: 1px solid #333;">
+        v1.0.1
     </div>
 
     <!-- MQTT.js from CDN -->
@@ -806,38 +806,24 @@
                 return;
             }
 
-            // Send reset command as a special serial message that the app will recognize
-            // Using the data topic that the app already publishes to
+            // The Android app publishes serial data but doesn't subscribe to receive commands
+            // So we can't directly reset the ESP32 from here
+            // Instead, we'll show a message explaining this
+
+            addLog('ℹ️ Reset Pierre function:', 'info');
+            addLog('The web interface cannot directly reset the ESP32 controller.', 'warning');
+            addLog('To reset your ESP32:', 'info');
+            addLog('1. Press the physical reset button on the ESP32', 'info');
+            addLog('2. Or use the app\'s disconnect/reconnect feature', 'info');
+            addLog('3. Or unplug and replug the USB cable', 'info');
+
+            // Still send a marker to the data stream for debugging
             const dataTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/data`;
+            const resetMarker = '[Web: Reset button pressed at ' + new Date().toLocaleTimeString() + ']';
 
-            // Special reset command format that the app can recognize
-            const resetMessage = '<<<SYSTEM_RESET_PIERRE>>>';
-
-            console.log('📡 Sending reset via data topic:', dataTopic);
-            console.log('📡 Command payload:', resetMessage);
-            addLog(`📡 Sending to topic: ${dataTopic}`, 'info');
-            addLog(`📡 Command: ${resetMessage}`, 'info');
-
-            // First method: Try the data topic (which app already uses)
-            client.publish(dataTopic, resetMessage, { qos: 1 }, (err) => {
-                if (err) {
-                    console.error('❌ Reset command error:', err);
-                    addLog('❌ Failed to send reset command: ' + err.message, 'error');
-                } else {
-                    console.log('✅ Reset command sent successfully');
-                    addLog('✅ RESET COMMAND SENT', 'success');
-
-                    // Also try sending a disconnect/reconnect signal
-                    setTimeout(() => {
-                        const statusTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/status`;
-                        client.publish(statusTopic, 'reset_requested', { qos: 1 }, (err) => {
-                            if (!err) {
-                                addLog('📡 Reset signal sent to status topic', 'info');
-                            }
-                        });
-                    }, 100);
-
-                    addLog('⏳ Sending reset signal to Android app...', 'info');
+            client.publish(dataTopic, resetMarker, { qos: 1 }, (err) => {
+                if (!err) {
+                    console.log('📝 Reset marker sent to data stream');
                 }
             });
         }
