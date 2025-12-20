@@ -671,6 +671,9 @@
                     try {
                         const status = JSON.parse(message);
 
+                        // Reset command in progress flag when we get any status
+                        serialMonitorCommandInProgress = false;
+
                         if (status.status === 'started') {
                             serialMonitorRunning = true;
                             serialMonitorStarting = false;
@@ -871,8 +874,15 @@
         setInterval(updateConnectionTime, 1000);
 
         // Toggle Serial Monitor (Start/Stop)
+        let serialMonitorCommandInProgress = false;
         function toggleSerialMonitor() {
             console.log('📱 Serial Monitor button clicked!');
+
+            // Prevent multiple commands at once
+            if (serialMonitorCommandInProgress) {
+                console.log('⏳ Command already in progress, ignoring click');
+                return;
+            }
 
             if (!client) {
                 console.log('❌ No MQTT client connection');
@@ -891,6 +901,9 @@
                 alert('Device or session ID missing');
                 return;
             }
+
+            // Mark command as in progress
+            serialMonitorCommandInProgress = true;
 
             // Determine action based on current state
             const command = serialMonitorRunning ? 'stop_serial_monitor' : 'start_serial_monitor';
@@ -923,6 +936,7 @@
                     addLog(`❌ Failed to ${action.toLowerCase()} Serial Monitor: ${err.message}`, 'error');
                     // Reset button state on error
                     serialMonitorStarting = false;
+                    serialMonitorCommandInProgress = false; // Reset flag
                     updateSerialMonitorButton();
                 } else {
                     console.log(`✅ ${command} sent successfully`);
@@ -930,6 +944,7 @@
 
                     // Set timeout for response (10 seconds)
                     setTimeout(() => {
+                        serialMonitorCommandInProgress = false; // Reset flag after timeout
                         if (serialMonitorStarting) {
                             console.log('⚠️ No response from device after 10 seconds');
                             addLog('⚠️ No response from device - command may have failed', 'warning');
