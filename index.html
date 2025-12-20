@@ -375,6 +375,31 @@
             }
         }
 
+        /* Serial Monitor button states */
+        .serial-monitor-btn {
+            transition: all 0.3s ease;
+            min-width: 160px;
+        }
+
+        .serial-monitor-btn.starting {
+            background: #ffa500 !important;
+            color: #ffffff !important;
+            border-color: #ffa500 !important;
+            opacity: 0.8;
+            cursor: wait;
+        }
+
+        .serial-monitor-btn.running {
+            background: #ff4444 !important;
+            color: #ffffff !important;
+            border-color: #ff4444 !important;
+        }
+
+        .serial-monitor-btn.running:hover {
+            background: #ff6666 !important;
+            border-color: #ff6666 !important;
+        }
+
     </style>
 </head>
 <body>
@@ -418,6 +443,7 @@
                     <div class="control-buttons">
                         <button onclick="clearLogs()">Clear</button>
                         <button onclick="resetPierre()">Reset Pierre</button>
+                        <button onclick="toggleSerialMonitor()" id="serialMonitorBtn" class="serial-monitor-btn">Start Serial Monitor</button>
                         <button onclick="toggleAutoScroll()" id="autoScrollBtn">Auto Scroll: ON</button>
                         <button onclick="downloadLogs()">Download</button>
                     </div>
@@ -458,6 +484,8 @@
         let connectionTime = null;
         let lastHeartbeat = null;
         let heartbeatCheckInterval = null;
+        let serialMonitorRunning = false;
+        let serialMonitorStarting = false;
 
         // Initialize AnsiUp for ANSI color support
         let ansiUp;
@@ -568,6 +596,16 @@
                     }
                 });
 
+                // Subscribe to serial monitor status updates
+                const serialMonitorStatusTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/serial_monitor_status`;
+                client.subscribe(serialMonitorStatusTopic, { qos: 0 }, (err) => {
+                    if (err) {
+                        console.error('Serial monitor status subscribe error:', err);
+                    } else {
+                        console.log('Subscribed to serial monitor status:', serialMonitorStatusTopic);
+                    }
+                });
+
                 // Reset button
                 connectBtn.disabled = false;
                 connectBtn.textContent = 'Connect to Live Stream';
@@ -625,6 +663,58 @@
                         } else {
                             deviceInfoEl.textContent = `| ${deviceName}`;
                         }
+                    }
+                } else if (topic.endsWith('/serial_monitor_status')) {
+                    // Handle serial monitor status updates from device
+                    console.log('📱 Serial Monitor status:', message);
+
+                    try {
+                        const status = JSON.parse(message);
+
+                        if (status.status === 'started') {
+                            serialMonitorRunning = true;
+                            serialMonitorStarting = false;
+                            addLog('✅ Serial Monitor started successfully', 'success');
+                            updateSerialMonitorButton();
+                        } else if (status.status === 'stopped') {
+                            serialMonitorRunning = false;
+                            serialMonitorStarting = false;
+                            addLog('✅ Serial Monitor stopped', 'info');
+                            updateSerialMonitorButton();
+                        } else if (status.status === 'already_running') {
+                            serialMonitorRunning = true;
+                            serialMonitorStarting = false;
+                            addLog('ℹ️ Serial Monitor is already running', 'info');
+                            updateSerialMonitorButton();
+                        } else if (status.status === 'error') {
+                            serialMonitorRunning = false;
+                            serialMonitorStarting = false;
+                            const errorMsg = status.message || 'Unknown error';
+                            addLog(`❌ Serial Monitor error: ${errorMsg}`, 'error');
+
+                            // Show specific error messages
+                            if (status.reason === 'no_usb') {
+                                alert('Cannot start Serial Monitor: No USB device connected');
+                            } else if (status.reason === 'flashing_active') {
+                                alert('Cannot start Serial Monitor: Flashing is in progress');
+                            } else if (status.reason === 'permission_denied') {
+                                alert('Cannot start Serial Monitor: USB permission denied');
+                            }
+
+                            updateSerialMonitorButton();
+                        }
+                    } catch (e) {
+                        // Handle plain text status for backward compatibility
+                        if (message === 'started' || message === 'running') {
+                            serialMonitorRunning = true;
+                            serialMonitorStarting = false;
+                            addLog('✅ Serial Monitor is running', 'success');
+                        } else if (message === 'stopped') {
+                            serialMonitorRunning = false;
+                            serialMonitorStarting = false;
+                            addLog('✅ Serial Monitor stopped', 'info');
+                        }
+                        updateSerialMonitorButton();
                     }
                 } else {
                     // Regular serial data message
@@ -779,6 +869,95 @@
 
         // Update connection time every second
         setInterval(updateConnectionTime, 1000);
+
+        // Toggle Serial Monitor (Start/Stop)
+        function toggleSerialMonitor() {
+            console.log('📱 Serial Monitor button clicked!');
+
+            if (!client) {
+                console.log('❌ No MQTT client connection');
+                addLog('❌ Not connected to MQTT broker', 'error');
+                alert('Not connected to device');
+                return;
+            }
+
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const sessionId = document.getElementById('sessionId').value.trim();
+            const button = document.getElementById('serialMonitorBtn');
+
+            if (!deviceId || !sessionId) {
+                console.log('❌ Missing Device ID or Session ID');
+                addLog('❌ Device or session ID missing', 'error');
+                alert('Device or session ID missing');
+                return;
+            }
+
+            // Determine action based on current state
+            const command = serialMonitorRunning ? 'stop_serial_monitor' : 'start_serial_monitor';
+            const action = serialMonitorRunning ? 'Stopping' : 'Starting';
+
+            // Update button to show starting state
+            if (!serialMonitorRunning && !serialMonitorStarting) {
+                serialMonitorStarting = true;
+                button.textContent = 'Starting...';
+                button.classList.add('starting');
+                addLog(`⏳ ${action} Serial Monitor...`, 'info');
+            } else if (serialMonitorRunning) {
+                addLog(`🛑 Stopping Serial Monitor...`, 'info');
+                button.textContent = 'Stopping...';
+                button.classList.add('starting');
+            }
+
+            // Send command via control topic
+            const controlTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/control`;
+            const commandPayload = JSON.stringify({
+                command: command,
+                timestamp: Date.now()
+            });
+
+            console.log(`📡 Sending ${command} to topic:`, controlTopic);
+
+            client.publish(controlTopic, commandPayload, { qos: 1 }, (err) => {
+                if (err) {
+                    console.error(`❌ ${command} error:`, err);
+                    addLog(`❌ Failed to ${action.toLowerCase()} Serial Monitor: ${err.message}`, 'error');
+                    // Reset button state on error
+                    serialMonitorStarting = false;
+                    updateSerialMonitorButton();
+                } else {
+                    console.log(`✅ ${command} sent successfully`);
+                    addLog(`📡 ${action} command sent to device`, 'info');
+
+                    // Set timeout for response (10 seconds)
+                    setTimeout(() => {
+                        if (serialMonitorStarting) {
+                            console.log('⚠️ No response from device after 10 seconds');
+                            addLog('⚠️ No response from device - command may have failed', 'warning');
+                            serialMonitorStarting = false;
+                            updateSerialMonitorButton();
+                        }
+                    }, 10000);
+                }
+            });
+        }
+
+        // Update Serial Monitor button based on state
+        function updateSerialMonitorButton() {
+            const button = document.getElementById('serialMonitorBtn');
+            if (!button) return;
+
+            button.classList.remove('starting', 'running');
+
+            if (serialMonitorStarting) {
+                button.textContent = 'Starting...';
+                button.classList.add('starting');
+            } else if (serialMonitorRunning) {
+                button.textContent = 'Stop Serial Monitor';
+                button.classList.add('running');
+            } else {
+                button.textContent = 'Start Serial Monitor';
+            }
+        }
 
         function resetPierre() {
             console.log('🔄 Reset Pierre button clicked!');
