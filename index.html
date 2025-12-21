@@ -418,6 +418,7 @@
                     <div class="control-buttons">
                         <button onclick="clearLogs()">Clear</button>
                         <button onclick="resetPierre()">Reset Pierre</button>
+                        <button onclick="startSerialMonitor()">Start Serial Monitor</button>
                         <button onclick="toggleAutoScroll()" id="autoScrollBtn">Auto Scroll: ON</button>
                         <button onclick="downloadLogs()">Download</button>
                     </div>
@@ -824,6 +825,52 @@
                     addLog('🔄 ESP32 will be reset via RTS pin...', 'info');
                 }
             });
+        }
+
+        function startSerialMonitor() {
+            console.log('📟 Start Serial Monitor button clicked!');
+            addLog('📟 START SERIAL MONITOR BUTTON CLICKED!', 'info');
+
+            if (!client) {
+                console.log('❌ No MQTT client connection');
+                addLog('❌ Not connected to MQTT broker', 'error');
+                alert('Not connected to device');
+                return;
+            }
+
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const sessionId = document.getElementById('sessionId').value.trim();
+
+            console.log('📍 Device ID:', deviceId);
+            console.log('📍 Session ID:', sessionId);
+            addLog(`📍 Using Device ID: ${deviceId}`, 'info');
+            addLog(`📍 Using Session ID: ${sessionId}`, 'info');
+
+            if (!deviceId || !sessionId) {
+                console.log('❌ Missing Device ID or Session ID');
+                addLog('❌ Device or session ID missing', 'error');
+                alert('Device or session ID missing');
+                return;
+            }
+
+            const topic = `pierre/commands/${deviceId}/${sessionId}/serial_monitor`;
+            const message = JSON.stringify({
+                command: 'start_serial_monitor',
+                timestamp: Date.now()
+            });
+
+            console.log('📤 Publishing to topic:', topic);
+            console.log('📤 Message:', message);
+            addLog(`📤 Sending serial monitor command to topic: ${topic}`, 'info');
+
+            try {
+                client.publish(topic, message);
+                console.log('✅ Serial monitor command sent successfully');
+                addLog('✅ Serial monitor command sent to device', 'success');
+            } catch (error) {
+                console.error('❌ Failed to send command:', error);
+                addLog(`❌ Failed to send command: ${error}`, 'error');
+            }
         }
 
         // Clean up on page unload
