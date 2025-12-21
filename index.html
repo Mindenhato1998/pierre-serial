@@ -829,7 +829,6 @@
 
         function startSerialMonitor() {
             console.log('📟 Start Serial Monitor button clicked!');
-            addLog('📟 START SERIAL MONITOR BUTTON CLICKED!', 'info');
 
             if (!client) {
                 console.log('❌ No MQTT client connection');
@@ -843,8 +842,6 @@
 
             console.log('📍 Device ID:', deviceId);
             console.log('📍 Session ID:', sessionId);
-            addLog(`📍 Using Device ID: ${deviceId}`, 'info');
-            addLog(`📍 Using Session ID: ${sessionId}`, 'info');
 
             if (!deviceId || !sessionId) {
                 console.log('❌ Missing Device ID or Session ID');
@@ -861,7 +858,6 @@
 
             console.log('📤 Publishing to topic:', topic);
             console.log('📤 Message:', message);
-            addLog(`📤 Sending serial monitor command to topic: ${topic}`, 'info');
 
             try {
                 client.publish(topic, message);
