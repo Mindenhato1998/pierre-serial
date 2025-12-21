@@ -783,7 +783,6 @@
 
         function resetPierre() {
             console.log('🔄 Reset Pierre button clicked!');
-            addLog('🔄 RESET PIERRE BUTTON CLICKED!', 'info');
 
             if (!client) {
                 console.log('❌ No MQTT client connection');
@@ -797,8 +796,6 @@
 
             console.log('📍 Device ID:', deviceId);
             console.log('📍 Session ID:', sessionId);
-            addLog(`📍 Using Device ID: ${deviceId}`, 'info');
-            addLog(`📍 Using Session ID: ${sessionId}`, 'info');
 
             if (!deviceId || !sessionId) {
                 console.log('❌ Missing Device ID or Session ID');
@@ -813,7 +810,6 @@
 
             console.log('📡 Sending MQTT reset command to topic:', controlTopic);
             console.log('📡 Command payload:', resetCommand);
-            addLog(`📡 Sending reset command to ESP32...`, 'info');
 
             client.publish(controlTopic, resetCommand, { qos: 1 }, (err) => {
                 if (err) {
@@ -822,7 +818,6 @@
                 } else {
                     console.log('✅ Reset command sent successfully');
                     addLog('✅ RESET COMMAND SENT', 'success');
-                    addLog('🔄 ESP32 will be reset via RTS pin...', 'info');
                 }
             });
         }
