@@ -216,6 +216,16 @@
         .log-line.warning { color: #ffd43b; }
         .log-line.info { color: #74c0fc; }
 
+        /* App log styling - distinct from serial logs */
+        .log-line.applog {
+            background-color: rgba(100, 50, 200, 0.05);
+            border-left: 3px solid #6432c8;
+            padding-left: 10px;
+            margin-left: 10px;
+            font-style: italic;
+            color: #a78bfa;
+        }
+
         .no-data {
             text-align: center;
             padding: 3rem;
@@ -569,6 +579,16 @@
                     }
                 });
 
+                // Subscribe to app logs topic
+                const appLogTopic = `${MQTT_CONFIG.topicPrefix}/${deviceId}/${sessionId}/applog`;
+                client.subscribe(appLogTopic, { qos: 0 }, (err) => {
+                    if (err) {
+                        console.error('App log subscribe error:', err);
+                    } else {
+                        console.log('Subscribed to app logs:', appLogTopic);
+                    }
+                });
+
                 // Reset button
                 connectBtn.disabled = false;
                 connectBtn.textContent = 'Connect to Live Stream';
@@ -627,6 +647,11 @@
                             deviceInfoEl.textContent = `| ${deviceName}`;
                         }
                     }
+                } else if (topic.endsWith('/applog')) {
+                    // App log message - display with different style
+                    addLog(message, 'applog');
+                    messageCount++;
+                    document.getElementById('messageCount').textContent = `${messageCount} messages`;
                 } else {
                     // Regular serial data message
                     addLog(message);
