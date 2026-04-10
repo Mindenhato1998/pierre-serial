@@ -174,7 +174,7 @@
             border: 3px solid #2a2a2a;
             border-radius: 8px;
             position: absolute;
-            top: 60px;
+            top: 168px; /* status-bar (60px) + flash-panel (~108px) */
             left: 0;
             right: 0;
             bottom: 0;
@@ -261,8 +261,14 @@
             border: 2px solid #146e89;
             border-radius: 8px;
             padding: 0.75rem 1rem;
-            margin-bottom: 1rem;
             flex-shrink: 0;
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            height: 96px;
+            box-sizing: border-box;
+            z-index: 5;
         }
 
         .flash-panel-title {
@@ -473,6 +479,16 @@
             }
 
             .status-bar {
+                flex-shrink: 0;
+            }
+
+            .flash-panel {
+                position: relative;
+                top: auto;
+                left: auto;
+                right: auto;
+                height: auto;
+                margin: 0.5rem 0;
                 flex-shrink: 0;
             }
 
