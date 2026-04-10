@@ -330,7 +330,8 @@
         }
 
         .fw-slot-change,
-        .fw-slot-reset {
+        .fw-slot-reset,
+        .fw-slot-skip {
             background: transparent;
             border: none;
             font-size: 0.8rem;
@@ -348,12 +349,33 @@
             color: #81d4fa;
         }
 
+        .fw-slot-change:disabled {
+            color: #555555;
+            cursor: not-allowed;
+        }
+
         .fw-slot-reset {
             color: #FF6B6B;
         }
 
         .fw-slot-reset:hover {
             color: #ff8a8a;
+        }
+
+        .fw-slot-skip {
+            color: #FFA726;
+        }
+
+        .fw-slot-skip:hover {
+            color: #ffb95e;
+        }
+
+        .fw-slot-skip.active {
+            color: #4CAF50;
+        }
+
+        .fw-slot-skip.active:hover {
+            color: #66bb6a;
         }
 
         .fw-modal-footer {
@@ -642,7 +664,8 @@
                     <div class="fw-slot-name">Partition Table (0x8000)</div>
                     <div class="fw-slot-file" id="fwSlotFile_partition_table">partition_table.bin (default)</div>
                 </div>
-                <button class="fw-slot-change" onclick="pickSlotFile('partition_table')">Change</button>
+                <button class="fw-slot-change" id="fwSlotChange_partition_table" onclick="pickSlotFile('partition_table')">Change</button>
+                <button class="fw-slot-skip" id="fwSlotSkip_partition_table" onclick="toggleSkipPartitionTable()">Skip</button>
                 <button class="fw-slot-reset" id="fwSlotReset_partition_table" onclick="clearSlotFile('partition_table')" style="display:none;">Reset</button>
             </div>
 
@@ -683,7 +706,7 @@
 
     <!-- Version number in bottom left corner -->
     <div style="position: fixed; bottom: 10px; left: 10px; background: #000; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; z-index: 1000; border: 1px solid #333;">
-        v1.3.0
+        v1.4.0
     </div>
 
     <!-- MQTT.js from CDN -->
@@ -1171,6 +1194,8 @@
             production: null,
             ota_data: null,
         };
+        // If true, the Partition Table region is skipped entirely (neither custom nor default flashed).
+        let fwSkipPartitionTable = false;
         let fwActiveSlotForPick = null;     // which slot the hidden <input type=file> is currently targeting
         let fwUploadState = null;            // { cancelled, totalSlots, slotIndex, slotBytes, slotChunks, sentChunks }
         let fwIsUploading = false;
@@ -1211,6 +1236,16 @@
             refreshSlotUI();
         }
 
+        function toggleSkipPartitionTable() {
+            if (fwIsUploading) return;
+            fwSkipPartitionTable = !fwSkipPartitionTable;
+            if (fwSkipPartitionTable) {
+                // If we're skipping, drop any custom file the user might have picked.
+                fwSlots.partition_table = null;
+            }
+            refreshSlotUI();
+        }
+
         function refreshSlotUI() {
             for (const slot of Object.keys(SLOT_META)) {
                 const file = fwSlots[slot];
@@ -1226,9 +1261,31 @@
                     resetBtn.style.display = 'none';
                 }
             }
+
+            // Partition Table skip state overrides the label and disables Change/Reset.
+            const ptLabel = document.getElementById('fwSlotFile_partition_table');
+            const ptChange = document.getElementById('fwSlotChange_partition_table');
+            const ptReset = document.getElementById('fwSlotReset_partition_table');
+            const ptSkipBtn = document.getElementById('fwSlotSkip_partition_table');
+            if (fwSkipPartitionTable) {
+                ptLabel.textContent = 'SKIPPED — will not be flashed';
+                ptLabel.style.color = '#FFA726';
+                ptChange.disabled = true;
+                ptReset.style.display = 'none';
+                ptSkipBtn.textContent = 'Enable';
+                ptSkipBtn.classList.add('active');
+            } else {
+                ptLabel.style.color = '';
+                ptChange.disabled = fwIsUploading;
+                ptSkipBtn.textContent = 'Skip';
+                ptSkipBtn.classList.remove('active');
+            }
+
             const anySelected = Object.values(fwSlots).some(f => f !== null);
             const flashBtn = document.getElementById('fwFlashBtn');
-            flashBtn.disabled = !anySelected || fwIsUploading;
+            // Allow flashing if at least one custom file is selected OR if partition_table is skipped
+            // (skipping alone is a meaningful operation: re-flash everything default except partition).
+            flashBtn.disabled = (!anySelected && !fwSkipPartitionTable) || fwIsUploading;
         }
 
         // ---------- Progress UI ----------
@@ -1254,7 +1311,7 @@
             document.getElementById('fwCancelBtn').style.display = isUploading ? '' : 'none';
             document.getElementById('fwCloseBtn').disabled = isUploading;
             // Disable slot buttons during upload
-            document.querySelectorAll('.fw-slot-change, .fw-slot-reset').forEach(b => b.disabled = isUploading);
+            document.querySelectorAll('.fw-slot-change, .fw-slot-reset, .fw-slot-skip').forEach(b => b.disabled = isUploading);
             refreshSlotUI();
         }
 
@@ -1337,15 +1394,23 @@
                 .filter(s => fwSlots[s])
                 .map(s => ({ slot: s, file: fwSlots[s] }));
 
-            if (selected.length === 0) {
-                alert('Please select at least one .bin file');
+            // Build skip list (currently only partition_table)
+            const skipList = [];
+            if (fwSkipPartitionTable) skipList.push('partition_table');
+
+            if (selected.length === 0 && skipList.length === 0) {
+                alert('Please select at least one .bin file or enable a skip');
                 return;
             }
 
             fwUploadState = { cancelled: false };
             setFwUploading(true);
-            setFwProgress(0, `Uploading ${selected.length} slot${selected.length > 1 ? 's' : ''}...`);
-            addLog(`📤 Uploading custom firmware batch: ${selected.map(s => s.slot).join(', ')}`, 'info');
+            const summary = [
+                ...(selected.length ? [`${selected.length} slot${selected.length > 1 ? 's' : ''}`] : []),
+                ...(skipList.length ? [`skip: ${skipList.join(',')}`] : []),
+            ].join(', ');
+            setFwProgress(0, `Uploading ${summary}...`);
+            addLog(`📤 Uploading custom firmware batch: ${summary}`, 'info');
 
             const base = `pierre/firmware/${deviceId}/${sessionId}`;
 
@@ -1355,7 +1420,7 @@
                     addLog(`📤 Uploading ${slot}: ${file.name} (${file.size} bytes)`, 'info');
                     await uploadOneSlot(base, slot, file, (sent, total) => {
                         // Each slot contributes (90 / N) percent of the total bar
-                        const slotShare = 90 / selected.length;
+                        const slotShare = 90 / Math.max(1, selected.length);
                         const slotBase = slotShare * i;
                         const slotPct = slotBase + slotShare * (sent / total);
                         setFwProgress(slotPct, `[${i + 1}/${selected.length}] ${slot}: ${sent}/${total} chunks`);
@@ -1363,9 +1428,10 @@
                     addLog(`✅ ${slot} uploaded`, 'success');
                 }
 
-                // All slots done — send /commit to trigger the actual flash
+                // All slots done — send /commit (with optional skip list) to trigger the actual flash
+                const commitPayload = JSON.stringify({ skip: skipList });
                 await new Promise((resolve, reject) => {
-                    client.publish(`${base}/commit`, '{}', { qos: 1 }, (err) => {
+                    client.publish(`${base}/commit`, commitPayload, { qos: 1 }, (err) => {
                         if (err) reject(err); else resolve();
                     });
                 });
