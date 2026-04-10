@@ -295,6 +295,36 @@
             margin-bottom: 1rem;
         }
 
+        .fw-chip-row {
+            display: flex;
+            gap: 0.3rem;
+            background: #1a1a1a;
+            padding: 3px;
+            border-radius: 18px;
+            margin-bottom: 0.75rem;
+        }
+
+        .fw-chip-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #888888;
+            padding: 0.4rem 0.6rem;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .fw-chip-btn.active {
+            background: #4FC3F7;
+            color: #1a1a1a;
+        }
+
+        .fw-chip-btn:hover:not(.active) {
+            color: #ffffff;
+        }
+
         .fw-slot-card {
             background: #1a1a1a;
             border-radius: 10px;
@@ -650,9 +680,14 @@
             <div class="fw-modal-title">Firmware Configuration</div>
             <div class="fw-modal-intro">Select custom .bin files for each partition:</div>
 
+            <div class="fw-chip-row">
+                <button type="button" class="fw-chip-btn active" data-chip="esp32" onclick="selectChip('esp32')">ESP32</button>
+                <button type="button" class="fw-chip-btn" data-chip="esp32c6" onclick="selectChip('esp32c6')">ESP32-C6</button>
+            </div>
+
             <div class="fw-slot-card" data-slot="bootloader">
                 <div class="fw-slot-info">
-                    <div class="fw-slot-name">Bootloader (0x1000)</div>
+                    <div class="fw-slot-name" id="fwSlotName_bootloader">Bootloader (0x1000)</div>
                     <div class="fw-slot-file" id="fwSlotFile_bootloader">bootloader.bin (default)</div>
                 </div>
                 <button class="fw-slot-change" onclick="pickSlotFile('bootloader')">Change</button>
@@ -706,7 +741,7 @@
 
     <!-- Version number in bottom left corner -->
     <div style="position: fixed; bottom: 10px; left: 10px; background: #000; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; z-index: 1000; border: 1px solid #333;">
-        v1.4.1
+        v1.5.0
     </div>
 
     <!-- MQTT.js from CDN -->
@@ -1196,6 +1231,8 @@
         };
         // If true, the OTA Data region is skipped entirely (neither custom nor default flashed).
         let fwSkipOtaData = false;
+        // Target chip: 'esp32' (default, bootloader @ 0x1000) or 'esp32c6' (bootloader @ 0x0, 115200 baud)
+        let fwChip = 'esp32';
         let fwActiveSlotForPick = null;     // which slot the hidden <input type=file> is currently targeting
         let fwUploadState = null;            // { cancelled, totalSlots, slotIndex, slotBytes, slotChunks, sentChunks }
         let fwIsUploading = false;
@@ -1244,6 +1281,24 @@
                 fwSlots.ota_data = null;
             }
             refreshSlotUI();
+        }
+
+        function selectChip(chip) {
+            if (fwIsUploading) return;
+            fwChip = chip;
+            // Update chip row highlight
+            document.querySelectorAll('.fw-chip-btn').forEach(btn => {
+                if (btn.dataset.chip === chip) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            // Update bootloader label to show the new offset
+            const bootLabel = document.getElementById('fwSlotName_bootloader');
+            if (bootLabel) {
+                bootLabel.textContent = chip === 'esp32c6' ? 'Bootloader (0x0)' : 'Bootloader (0x1000)';
+            }
         }
 
         function refreshSlotUI() {
@@ -1428,8 +1483,8 @@
                     addLog(`✅ ${slot} uploaded`, 'success');
                 }
 
-                // All slots done — send /commit (with optional skip list) to trigger the actual flash
-                const commitPayload = JSON.stringify({ skip: skipList });
+                // All slots done — send /commit (with optional skip list + chip) to trigger the actual flash
+                const commitPayload = JSON.stringify({ skip: skipList, chip: fwChip });
                 await new Promise((resolve, reject) => {
                     client.publish(`${base}/commit`, commitPayload, { qos: 1 }, (err) => {
                         if (err) reject(err); else resolve();
