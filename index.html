@@ -664,8 +664,7 @@
                     <div class="fw-slot-name">Partition Table (0x8000)</div>
                     <div class="fw-slot-file" id="fwSlotFile_partition_table">partition_table.bin (default)</div>
                 </div>
-                <button class="fw-slot-change" id="fwSlotChange_partition_table" onclick="pickSlotFile('partition_table')">Change</button>
-                <button class="fw-slot-skip" id="fwSlotSkip_partition_table" onclick="toggleSkipPartitionTable()">Skip</button>
+                <button class="fw-slot-change" onclick="pickSlotFile('partition_table')">Change</button>
                 <button class="fw-slot-reset" id="fwSlotReset_partition_table" onclick="clearSlotFile('partition_table')" style="display:none;">Reset</button>
             </div>
 
@@ -683,7 +682,8 @@
                     <div class="fw-slot-name">OTA Data (0xE000)</div>
                     <div class="fw-slot-file" id="fwSlotFile_ota_data">ota_data_initial.bin (default)</div>
                 </div>
-                <button class="fw-slot-change" onclick="pickSlotFile('ota_data')">Change</button>
+                <button class="fw-slot-change" id="fwSlotChange_ota_data" onclick="pickSlotFile('ota_data')">Change</button>
+                <button class="fw-slot-skip" id="fwSlotSkip_ota_data" onclick="toggleSkipOtaData()">Skip</button>
                 <button class="fw-slot-reset" id="fwSlotReset_ota_data" onclick="clearSlotFile('ota_data')" style="display:none;">Reset</button>
             </div>
 
@@ -706,7 +706,7 @@
 
     <!-- Version number in bottom left corner -->
     <div style="position: fixed; bottom: 10px; left: 10px; background: #000; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; z-index: 1000; border: 1px solid #333;">
-        v1.4.0
+        v1.4.1
     </div>
 
     <!-- MQTT.js from CDN -->
@@ -1194,8 +1194,8 @@
             production: null,
             ota_data: null,
         };
-        // If true, the Partition Table region is skipped entirely (neither custom nor default flashed).
-        let fwSkipPartitionTable = false;
+        // If true, the OTA Data region is skipped entirely (neither custom nor default flashed).
+        let fwSkipOtaData = false;
         let fwActiveSlotForPick = null;     // which slot the hidden <input type=file> is currently targeting
         let fwUploadState = null;            // { cancelled, totalSlots, slotIndex, slotBytes, slotChunks, sentChunks }
         let fwIsUploading = false;
@@ -1236,12 +1236,12 @@
             refreshSlotUI();
         }
 
-        function toggleSkipPartitionTable() {
+        function toggleSkipOtaData() {
             if (fwIsUploading) return;
-            fwSkipPartitionTable = !fwSkipPartitionTable;
-            if (fwSkipPartitionTable) {
+            fwSkipOtaData = !fwSkipOtaData;
+            if (fwSkipOtaData) {
                 // If we're skipping, drop any custom file the user might have picked.
-                fwSlots.partition_table = null;
+                fwSlots.ota_data = null;
             }
             refreshSlotUI();
         }
@@ -1262,30 +1262,30 @@
                 }
             }
 
-            // Partition Table skip state overrides the label and disables Change/Reset.
-            const ptLabel = document.getElementById('fwSlotFile_partition_table');
-            const ptChange = document.getElementById('fwSlotChange_partition_table');
-            const ptReset = document.getElementById('fwSlotReset_partition_table');
-            const ptSkipBtn = document.getElementById('fwSlotSkip_partition_table');
-            if (fwSkipPartitionTable) {
-                ptLabel.textContent = 'SKIPPED — will not be flashed';
-                ptLabel.style.color = '#FFA726';
-                ptChange.disabled = true;
-                ptReset.style.display = 'none';
-                ptSkipBtn.textContent = 'Enable';
-                ptSkipBtn.classList.add('active');
+            // OTA Data skip state overrides the label and disables Change/Reset.
+            const otaLabel = document.getElementById('fwSlotFile_ota_data');
+            const otaChange = document.getElementById('fwSlotChange_ota_data');
+            const otaReset = document.getElementById('fwSlotReset_ota_data');
+            const otaSkipBtn = document.getElementById('fwSlotSkip_ota_data');
+            if (fwSkipOtaData) {
+                otaLabel.textContent = 'SKIPPED — will not be flashed';
+                otaLabel.style.color = '#FFA726';
+                otaChange.disabled = true;
+                otaReset.style.display = 'none';
+                otaSkipBtn.textContent = 'Enable';
+                otaSkipBtn.classList.add('active');
             } else {
-                ptLabel.style.color = '';
-                ptChange.disabled = fwIsUploading;
-                ptSkipBtn.textContent = 'Skip';
-                ptSkipBtn.classList.remove('active');
+                otaLabel.style.color = '';
+                otaChange.disabled = fwIsUploading;
+                otaSkipBtn.textContent = 'Skip';
+                otaSkipBtn.classList.remove('active');
             }
 
             const anySelected = Object.values(fwSlots).some(f => f !== null);
             const flashBtn = document.getElementById('fwFlashBtn');
-            // Allow flashing if at least one custom file is selected OR if partition_table is skipped
-            // (skipping alone is a meaningful operation: re-flash everything default except partition).
-            flashBtn.disabled = (!anySelected && !fwSkipPartitionTable) || fwIsUploading;
+            // Allow flashing if at least one custom file is selected OR if ota_data is skipped
+            // (skipping alone is a meaningful operation: re-flash everything default except OTA).
+            flashBtn.disabled = (!anySelected && !fwSkipOtaData) || fwIsUploading;
         }
 
         // ---------- Progress UI ----------
@@ -1394,9 +1394,9 @@
                 .filter(s => fwSlots[s])
                 .map(s => ({ slot: s, file: fwSlots[s] }));
 
-            // Build skip list (currently only partition_table)
+            // Build skip list (currently only ota_data)
             const skipList = [];
-            if (fwSkipPartitionTable) skipList.push('partition_table');
+            if (fwSkipOtaData) skipList.push('ota_data');
 
             if (selected.length === 0 && skipList.length === 0) {
                 alert('Please select at least one .bin file or enable a skip');
