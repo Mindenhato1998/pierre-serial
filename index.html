@@ -174,7 +174,7 @@
             border: 3px solid #2a2a2a;
             border-radius: 8px;
             position: absolute;
-            top: 168px; /* status-bar (60px) + flash-panel (~108px) */
+            top: 60px;
             left: 0;
             right: 0;
             bottom: 0;
@@ -255,119 +255,182 @@
             border-color: #ffffff;
         }
 
-        /* Flash custom firmware panel */
-        .flash-panel {
-            background: #0f5670;
-            border: 2px solid #146e89;
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            flex-shrink: 0;
-            position: absolute;
-            top: 60px;
-            left: 0;
-            right: 0;
-            height: 96px;
-            box-sizing: border-box;
-            z-index: 5;
-        }
-
-        .flash-panel-title {
-            font-size: 0.85rem;
-            color: #ffffff;
-            margin-bottom: 0.6rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        .flash-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
+        /* Firmware configuration modal — mirrors the mobile app's Firmware dialog */
+        .fw-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
             align-items: center;
+            justify-content: center;
+            padding: 1rem;
         }
 
-        .flash-row select,
-        .flash-row input[type="file"] {
+        .fw-modal-backdrop.active {
+            display: flex;
+        }
+
+        .fw-modal {
+            background: #2b2b2b;
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            max-width: 520px;
+            width: 100%;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .fw-modal-title {
+            color: #4FC3F7;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .fw-modal-intro {
+            color: #dddddd;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .fw-slot-card {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 0.7rem 0.9rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .fw-slot-info {
             flex: 1;
-            min-width: 160px;
-            padding: 0.45rem 0.6rem;
-            background: #0a0a0a;
-            border: 2px solid #1a7fa0;
-            border-radius: 6px;
-            color: #ffffff;
-            font-family: inherit;
-            font-size: 0.8rem;
+            min-width: 0;
         }
 
-        .flash-row input[type="file"]::file-selector-button {
-            background: rgba(255, 255, 255, 0.9);
-            color: #146e89;
+        .fw-slot-name {
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .fw-slot-file {
+            color: #888888;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+
+        .fw-slot-file.custom {
+            color: #4CAF50;
+        }
+
+        .fw-slot-change,
+        .fw-slot-reset {
+            background: transparent;
             border: none;
-            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
             padding: 0.3rem 0.6rem;
-            font-weight: 700;
-            font-size: 0.75rem;
-            margin-right: 0.5rem;
-            cursor: pointer;
-        }
-
-        .flash-row button {
             flex: 0 0 auto;
-            padding: 0.5rem 1rem;
-            background: rgba(255, 255, 255, 0.9);
-            color: #146e89;
-            font-size: 0.75rem;
-            border: 2px solid rgba(255, 255, 255, 0.9);
-            border-radius: 6px;
-            font-weight: 700;
-            cursor: pointer;
         }
 
-        .flash-row button:hover {
-            background: #ffffff;
+        .fw-slot-change {
+            color: #4FC3F7;
         }
 
-        .flash-row button.cancel {
-            background: #ff5252;
-            color: #ffffff;
-            border-color: #ff5252;
+        .fw-slot-change:hover {
+            color: #81d4fa;
         }
 
-        .flash-row button.cancel:hover {
-            background: #ff1744;
-            border-color: #ff1744;
+        .fw-slot-reset {
+            color: #FF6B6B;
         }
 
-        .flash-progress-wrap {
-            margin-top: 0.6rem;
+        .fw-slot-reset:hover {
+            color: #ff8a8a;
+        }
+
+        .fw-modal-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .fw-modal-footer .fw-progress-wrap {
+            flex: 1 1 100%;
             display: none;
         }
 
-        .flash-progress-wrap.active {
+        .fw-modal-footer .fw-progress-wrap.active {
             display: block;
         }
 
-        .flash-progress-bar {
+        .fw-progress-bar {
             width: 100%;
-            height: 16px;
+            height: 14px;
             background: #0a0a0a;
             border: 2px solid #1a7fa0;
             border-radius: 8px;
             overflow: hidden;
         }
 
-        .flash-progress-fill {
+        .fw-progress-fill {
             height: 100%;
             width: 0%;
             background: linear-gradient(90deg, #1a7fa0 0%, #4caf50 100%);
             transition: width 0.2s ease;
         }
 
-        .flash-progress-text {
+        .fw-progress-text {
             font-size: 0.75rem;
-            color: #ffffff;
+            color: #dddddd;
             margin-top: 0.3rem;
             text-align: center;
+        }
+
+        .fw-btn {
+            background: transparent;
+            border: none;
+            color: #4FC3F7;
+            font-size: 0.9rem;
+            font-weight: 700;
+            padding: 0.5rem 0.9rem;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .fw-btn:hover {
+            background: rgba(79, 195, 247, 0.1);
+        }
+
+        .fw-btn.primary {
+            color: #4CAF50;
+        }
+
+        .fw-btn.primary:hover {
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .fw-btn.danger {
+            color: #FF6B6B;
+        }
+
+        .fw-btn.danger:hover {
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .fw-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
 
@@ -482,16 +545,6 @@
                 flex-shrink: 0;
             }
 
-            .flash-panel {
-                position: relative;
-                top: auto;
-                left: auto;
-                right: auto;
-                height: auto;
-                margin: 0.5rem 0;
-                flex-shrink: 0;
-            }
-
             .console {
                 flex: 1;
                 overflow-y: auto;
@@ -553,31 +606,11 @@
                     </div>
                     <div class="control-buttons">
                         <button onclick="clearLogs()">Clear</button>
+                        <button onclick="openFirmwareModal()">Flash Custom Firmware</button>
                         <button onclick="resetPierre()">Reset Pierre</button>
                         <button onclick="startSerialMonitor()">Start Serial Monitor</button>
                         <button onclick="toggleAutoScroll()" id="autoScrollBtn">Auto Scroll: ON</button>
                         <button onclick="downloadLogs()">Download</button>
-                    </div>
-                </div>
-
-                <div class="flash-panel">
-                    <div class="flash-panel-title">⚡ FLASH CUSTOM FIRMWARE</div>
-                    <div class="flash-row">
-                        <select id="fwSlot">
-                            <option value="production" selected>Production (0x10000)</option>
-                            <option value="bootloader">Bootloader (0x1000)</option>
-                            <option value="partition_table">Partition Table (0x8000)</option>
-                            <option value="ota_data">OTA Data (0xE000)</option>
-                        </select>
-                        <input type="file" id="fwFile" accept=".bin">
-                        <button id="fwFlashBtn" onclick="uploadAndFlashFirmware()">Upload &amp; Flash</button>
-                        <button id="fwCancelBtn" class="cancel" onclick="cancelFirmwareUpload()" style="display:none;">Cancel</button>
-                    </div>
-                    <div class="flash-progress-wrap" id="fwProgressWrap">
-                        <div class="flash-progress-bar">
-                            <div class="flash-progress-fill" id="fwProgressFill"></div>
-                        </div>
-                        <div class="flash-progress-text" id="fwProgressText">Preparing...</div>
                     </div>
                 </div>
 
@@ -589,9 +622,68 @@
         </div>
     </div>
 
+    <!-- Firmware Configuration modal -->
+    <div class="fw-modal-backdrop" id="fwModal" onclick="onFwModalBackdropClick(event)">
+        <div class="fw-modal" onclick="event.stopPropagation()">
+            <div class="fw-modal-title">Firmware Configuration</div>
+            <div class="fw-modal-intro">Select custom .bin files for each partition:</div>
+
+            <div class="fw-slot-card" data-slot="bootloader">
+                <div class="fw-slot-info">
+                    <div class="fw-slot-name">Bootloader (0x1000)</div>
+                    <div class="fw-slot-file" id="fwSlotFile_bootloader">bootloader.bin (default)</div>
+                </div>
+                <button class="fw-slot-change" onclick="pickSlotFile('bootloader')">Change</button>
+                <button class="fw-slot-reset" id="fwSlotReset_bootloader" onclick="clearSlotFile('bootloader')" style="display:none;">Reset</button>
+            </div>
+
+            <div class="fw-slot-card" data-slot="partition_table">
+                <div class="fw-slot-info">
+                    <div class="fw-slot-name">Partition Table (0x8000)</div>
+                    <div class="fw-slot-file" id="fwSlotFile_partition_table">partition_table.bin (default)</div>
+                </div>
+                <button class="fw-slot-change" onclick="pickSlotFile('partition_table')">Change</button>
+                <button class="fw-slot-reset" id="fwSlotReset_partition_table" onclick="clearSlotFile('partition_table')" style="display:none;">Reset</button>
+            </div>
+
+            <div class="fw-slot-card" data-slot="production">
+                <div class="fw-slot-info">
+                    <div class="fw-slot-name">Production (0x10000)</div>
+                    <div class="fw-slot-file" id="fwSlotFile_production">production.bin (default)</div>
+                </div>
+                <button class="fw-slot-change" onclick="pickSlotFile('production')">Change</button>
+                <button class="fw-slot-reset" id="fwSlotReset_production" onclick="clearSlotFile('production')" style="display:none;">Reset</button>
+            </div>
+
+            <div class="fw-slot-card" data-slot="ota_data">
+                <div class="fw-slot-info">
+                    <div class="fw-slot-name">OTA Data (0xE000)</div>
+                    <div class="fw-slot-file" id="fwSlotFile_ota_data">ota_data_initial.bin (default)</div>
+                </div>
+                <button class="fw-slot-change" onclick="pickSlotFile('ota_data')">Change</button>
+                <button class="fw-slot-reset" id="fwSlotReset_ota_data" onclick="clearSlotFile('ota_data')" style="display:none;">Reset</button>
+            </div>
+
+            <div class="fw-modal-footer">
+                <div class="fw-progress-wrap" id="fwProgressWrap">
+                    <div class="fw-progress-bar">
+                        <div class="fw-progress-fill" id="fwProgressFill"></div>
+                    </div>
+                    <div class="fw-progress-text" id="fwProgressText">Preparing...</div>
+                </div>
+                <button class="fw-btn danger" id="fwCancelBtn" onclick="cancelFirmwareUpload()" style="display:none;">Cancel</button>
+                <button class="fw-btn primary" id="fwFlashBtn" onclick="uploadAndFlashFirmware()">Flash</button>
+                <button class="fw-btn" id="fwCloseBtn" onclick="closeFirmwareModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden file input reused for all slots -->
+    <input type="file" id="fwFileInput" accept=".bin" style="display:none;">
+
     <!-- Version number in bottom left corner -->
     <div style="position: fixed; bottom: 10px; left: 10px; background: #000; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; z-index: 1000; border: 1px solid #333;">
-        v1.2.0
+        v1.3.0
     </div>
 
     <!-- MQTT.js from CDN -->
@@ -1053,16 +1145,93 @@
         }
 
         // =====================================================================
-        // Custom firmware upload over MQTT
+        // Custom firmware upload over MQTT — multi-slot, mirrors the mobile app
         // =====================================================================
-        // We send the .bin file in small chunks on pierre/firmware/{device}/{session}/chunk,
-        // bracketed by /start and /end messages. The phone writes the chunks into a cache
-        // file and, once /end arrives, triggers its existing custom-firmware flash path.
-        // The phone publishes progress updates back on /progress, which we render here.
+        // The user can pick a .bin file for each of 4 slots (bootloader,
+        // partition_table, production, ota_data). When they press Flash, we send
+        // every selected slot in order as /start + /chunk... + /end, then a single
+        // /commit message that tells the phone to flash the batch. Only the slots
+        // with a custom file assigned are sent — the others stay default on the
+        // phone, exactly like the mobile custom-firmware dialog.
 
-        const FW_CHUNK_SIZE = 32 * 1024; // 32 KB per chunk (~44 KB base64, well under HiveMQ free limits)
-        const FW_CHUNK_DELAY_MS = 40;    // Pause between chunks to give the broker a break
-        let fwUploadState = null;         // { file, slot, totalChunks, buffer, cancelled }
+        const FW_CHUNK_SIZE = 32 * 1024; // 32 KB per chunk (~44 KB base64)
+        const FW_CHUNK_DELAY_MS = 40;    // Pause between chunks
+
+        const SLOT_META = {
+            bootloader:       { label: 'bootloader.bin (default)' },
+            partition_table:  { label: 'partition_table.bin (default)' },
+            production:       { label: 'production.bin (default)' },
+            ota_data:         { label: 'ota_data_initial.bin (default)' },
+        };
+
+        // Per-slot selected File (or null if default).
+        const fwSlots = {
+            bootloader: null,
+            partition_table: null,
+            production: null,
+            ota_data: null,
+        };
+        let fwActiveSlotForPick = null;     // which slot the hidden <input type=file> is currently targeting
+        let fwUploadState = null;            // { cancelled, totalSlots, slotIndex, slotBytes, slotChunks, sentChunks }
+        let fwIsUploading = false;
+
+        // ---------- Modal open/close ----------
+
+        function openFirmwareModal() {
+            document.getElementById('fwModal').classList.add('active');
+            refreshSlotUI();
+        }
+
+        function closeFirmwareModal() {
+            if (fwIsUploading) {
+                // Don't let the user close mid-upload — they need to cancel explicitly.
+                return;
+            }
+            document.getElementById('fwModal').classList.remove('active');
+        }
+
+        function onFwModalBackdropClick(ev) {
+            // Click on the backdrop (not the modal itself) closes, unless uploading.
+            if (ev.target.id === 'fwModal') closeFirmwareModal();
+        }
+
+        // ---------- Slot file picking ----------
+
+        function pickSlotFile(slot) {
+            if (fwIsUploading) return;
+            fwActiveSlotForPick = slot;
+            const input = document.getElementById('fwFileInput');
+            input.value = ''; // allow re-picking the same file
+            input.click();
+        }
+
+        function clearSlotFile(slot) {
+            if (fwIsUploading) return;
+            fwSlots[slot] = null;
+            refreshSlotUI();
+        }
+
+        function refreshSlotUI() {
+            for (const slot of Object.keys(SLOT_META)) {
+                const file = fwSlots[slot];
+                const label = document.getElementById(`fwSlotFile_${slot}`);
+                const resetBtn = document.getElementById(`fwSlotReset_${slot}`);
+                if (file) {
+                    label.textContent = file.name;
+                    label.classList.add('custom');
+                    resetBtn.style.display = '';
+                } else {
+                    label.textContent = SLOT_META[slot].label;
+                    label.classList.remove('custom');
+                    resetBtn.style.display = 'none';
+                }
+            }
+            const anySelected = Object.values(fwSlots).some(f => f !== null);
+            const flashBtn = document.getElementById('fwFlashBtn');
+            flashBtn.disabled = !anySelected || fwIsUploading;
+        }
+
+        // ---------- Progress UI ----------
 
         function setFwProgress(percent, text) {
             const wrap = document.getElementById('fwProgressWrap');
@@ -1080,14 +1249,16 @@
         }
 
         function setFwUploading(isUploading) {
+            fwIsUploading = isUploading;
             document.getElementById('fwFlashBtn').style.display = isUploading ? 'none' : '';
             document.getElementById('fwCancelBtn').style.display = isUploading ? '' : 'none';
-            document.getElementById('fwFile').disabled = isUploading;
-            document.getElementById('fwSlot').disabled = isUploading;
+            document.getElementById('fwCloseBtn').disabled = isUploading;
+            // Disable slot buttons during upload
+            document.querySelectorAll('.fw-slot-change, .fw-slot-reset').forEach(b => b.disabled = isUploading);
+            refreshSlotUI();
         }
 
         function arrayBufferToBase64(buffer) {
-            // Convert a Uint8Array/ArrayBuffer slice to base64 in a way that works in all browsers.
             let binary = '';
             const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
             const chunk = 0x8000;
@@ -1097,67 +1268,30 @@
             return btoa(binary);
         }
 
-        async function uploadAndFlashFirmware() {
-            if (!client || !client.connected) {
-                alert('Not connected to device');
-                return;
-            }
-            const fileInput = document.getElementById('fwFile');
-            if (!fileInput.files || fileInput.files.length === 0) {
-                alert('Please choose a .bin file first');
-                return;
-            }
-            const file = fileInput.files[0];
-            if (!file.name.toLowerCase().endsWith('.bin')) {
-                if (!confirm(`"${file.name}" does not look like a .bin file. Upload anyway?`)) return;
-            }
-            const slot = document.getElementById('fwSlot').value;
+        // ---------- Upload + flash ----------
 
-            const deviceId = document.getElementById('deviceId').value.trim();
-            const sessionId = document.getElementById('sessionId').value.trim();
-            if (!deviceId || !sessionId) {
-                alert('Device or session ID missing');
-                return;
-            }
-
+        async function uploadOneSlot(base, slot, file, onChunkProgress) {
             const buffer = new Uint8Array(await file.arrayBuffer());
             const totalChunks = Math.ceil(buffer.length / FW_CHUNK_SIZE);
 
-            fwUploadState = {
-                file, slot, totalChunks, buffer,
-                cancelled: false,
-                deviceId, sessionId,
-            };
-
-            setFwUploading(true);
-            setFwProgress(0, `Uploading ${file.name} (${(buffer.length / 1024).toFixed(0)} KB, ${totalChunks} chunks)...`);
-            addLog(`📤 Uploading firmware: ${file.name} (${buffer.length} bytes) to slot "${slot}"`, 'info');
-
-            const base = `pierre/firmware/${deviceId}/${sessionId}`;
-
-            // Start message
+            // /start
             const startPayload = JSON.stringify({
                 filename: file.name,
                 size: buffer.length,
                 chunks: totalChunks,
                 slot: slot,
             });
-            await new Promise((resolve) => {
+            await new Promise((resolve, reject) => {
                 client.publish(`${base}/start`, startPayload, { qos: 1 }, (err) => {
-                    if (err) addLog(`❌ Failed to send start: ${err.message}`, 'error');
-                    resolve();
+                    if (err) reject(err); else resolve();
                 });
             });
 
-            // Chunks
+            // /chunk loop
             for (let i = 0; i < totalChunks; i++) {
                 if (fwUploadState && fwUploadState.cancelled) {
-                    addLog('✖ Upload cancelled', 'warning');
                     client.publish(`${base}/abort`, '{}', { qos: 1 });
-                    setFwUploading(false);
-                    hideFwProgress();
-                    fwUploadState = null;
-                    return;
+                    throw new Error('cancelled');
                 }
                 const start = i * FW_CHUNK_SIZE;
                 const end = Math.min(start + FW_CHUNK_SIZE, buffer.length);
@@ -1168,29 +1302,86 @@
                     offset: start,
                     data: b64,
                 });
-
                 await new Promise((resolve, reject) => {
                     client.publish(`${base}/chunk`, chunkPayload, { qos: 1 }, (err) => {
                         if (err) reject(err); else resolve();
                     });
                 });
-
-                const pct = Math.floor(((i + 1) / totalChunks) * 90); // up to 90% for upload, last 10% for flash
-                setFwProgress(pct, `Uploading chunk ${i + 1}/${totalChunks}`);
+                if (onChunkProgress) onChunkProgress(i + 1, totalChunks);
                 if (FW_CHUNK_DELAY_MS > 0) await new Promise(r => setTimeout(r, FW_CHUNK_DELAY_MS));
             }
 
-            // End message
-            await new Promise((resolve) => {
+            // /end
+            await new Promise((resolve, reject) => {
                 client.publish(`${base}/end`, '{}', { qos: 1 }, (err) => {
-                    if (err) addLog(`❌ Failed to send end: ${err.message}`, 'error');
-                    resolve();
+                    if (err) reject(err); else resolve();
                 });
             });
+        }
 
-            setFwProgress(92, 'Upload complete, waiting for phone to flash...');
-            addLog('✅ Upload complete, waiting for flasher to start...', 'success');
-            // Don't flip setFwUploading(false) yet — wait for progress="done" from the phone.
+        async function uploadAndFlashFirmware() {
+            if (!client || !client.connected) {
+                alert('Not connected to device');
+                return;
+            }
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const sessionId = document.getElementById('sessionId').value.trim();
+            if (!deviceId || !sessionId) {
+                alert('Device or session ID missing');
+                return;
+            }
+
+            // Collect the slots the user actually picked, in canonical order.
+            const slotOrder = ['bootloader', 'partition_table', 'production', 'ota_data'];
+            const selected = slotOrder
+                .filter(s => fwSlots[s])
+                .map(s => ({ slot: s, file: fwSlots[s] }));
+
+            if (selected.length === 0) {
+                alert('Please select at least one .bin file');
+                return;
+            }
+
+            fwUploadState = { cancelled: false };
+            setFwUploading(true);
+            setFwProgress(0, `Uploading ${selected.length} slot${selected.length > 1 ? 's' : ''}...`);
+            addLog(`📤 Uploading custom firmware batch: ${selected.map(s => s.slot).join(', ')}`, 'info');
+
+            const base = `pierre/firmware/${deviceId}/${sessionId}`;
+
+            try {
+                for (let i = 0; i < selected.length; i++) {
+                    const { slot, file } = selected[i];
+                    addLog(`📤 Uploading ${slot}: ${file.name} (${file.size} bytes)`, 'info');
+                    await uploadOneSlot(base, slot, file, (sent, total) => {
+                        // Each slot contributes (90 / N) percent of the total bar
+                        const slotShare = 90 / selected.length;
+                        const slotBase = slotShare * i;
+                        const slotPct = slotBase + slotShare * (sent / total);
+                        setFwProgress(slotPct, `[${i + 1}/${selected.length}] ${slot}: ${sent}/${total} chunks`);
+                    });
+                    addLog(`✅ ${slot} uploaded`, 'success');
+                }
+
+                // All slots done — send /commit to trigger the actual flash
+                await new Promise((resolve, reject) => {
+                    client.publish(`${base}/commit`, '{}', { qos: 1 }, (err) => {
+                        if (err) reject(err); else resolve();
+                    });
+                });
+                setFwProgress(92, 'Upload complete, waiting for phone to flash...');
+                addLog('✅ All uploads sent, waiting for flash to start...', 'success');
+                // setFwUploading(false) happens when we get status=done/error from the phone.
+            } catch (e) {
+                if (e && e.message === 'cancelled') {
+                    addLog('✖ Upload cancelled', 'warning');
+                } else {
+                    addLog(`❌ Upload error: ${e.message || e}`, 'error');
+                }
+                setFwUploading(false);
+                hideFwProgress();
+                fwUploadState = null;
+            }
         }
 
         function cancelFirmwareUpload() {
@@ -1210,18 +1401,19 @@
             const status = msg.status || '';
             const received = msg.received || 0;
             const total = msg.total || 0;
+            const slot = msg.slot || '';
             const extra = msg.message ? ` — ${msg.message}` : '';
             switch (status) {
-                case 'uploading': {
-                    if (total > 0) {
-                        const pct = Math.floor((received / total) * 90);
-                        setFwProgress(pct, `Phone received ${received}/${total} chunks${extra}`);
-                    }
+                case 'uploading':
+                    // The phone mirrors per-chunk progress; we already show our own bar based
+                    // on the upload loop, so just log occasionally.
                     break;
-                }
+                case 'slot_ready':
+                    addLog(`📦 Phone confirmed ${slot}`, 'info');
+                    break;
                 case 'ready':
-                    setFwProgress(92, `Upload received by phone${extra}`);
-                    addLog(`📦 Phone has full firmware${extra}`, 'info');
+                    setFwProgress(92, `All slots received by phone${extra}`);
+                    addLog(`📦 Phone has full firmware batch${extra}`, 'info');
                     break;
                 case 'flashing':
                     setFwProgress(95, `Flashing ESP32${extra}`);
@@ -1251,6 +1443,24 @@
                     console.log('Unknown firmware progress status:', status, msg);
             }
         }
+
+        // Wire the hidden file input to populate the active slot.
+        window.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('fwFileInput');
+            if (input) {
+                input.addEventListener('change', (e) => {
+                    const slot = fwActiveSlotForPick;
+                    fwActiveSlotForPick = null;
+                    if (!slot || !e.target.files || e.target.files.length === 0) return;
+                    const file = e.target.files[0];
+                    if (!file.name.toLowerCase().endsWith('.bin')) {
+                        if (!confirm(`"${file.name}" does not look like a .bin file. Use anyway?`)) return;
+                    }
+                    fwSlots[slot] = file;
+                    refreshSlotUI();
+                });
+            }
+        });
 
         // Clean up on page unload
         window.addEventListener('beforeunload', () => {
