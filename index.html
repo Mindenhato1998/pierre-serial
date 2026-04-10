@@ -236,6 +236,7 @@
         .control-buttons {
             display: flex;
             gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .control-buttons button {
@@ -252,6 +253,115 @@
         .control-buttons button:hover {
             background: #ffffff;
             border-color: #ffffff;
+        }
+
+        /* Flash custom firmware panel */
+        .flash-panel {
+            background: #0f5670;
+            border: 2px solid #146e89;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+
+        .flash-panel-title {
+            font-size: 0.85rem;
+            color: #ffffff;
+            margin-bottom: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .flash-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .flash-row select,
+        .flash-row input[type="file"] {
+            flex: 1;
+            min-width: 160px;
+            padding: 0.45rem 0.6rem;
+            background: #0a0a0a;
+            border: 2px solid #1a7fa0;
+            border-radius: 6px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 0.8rem;
+        }
+
+        .flash-row input[type="file"]::file-selector-button {
+            background: rgba(255, 255, 255, 0.9);
+            color: #146e89;
+            border: none;
+            border-radius: 4px;
+            padding: 0.3rem 0.6rem;
+            font-weight: 700;
+            font-size: 0.75rem;
+            margin-right: 0.5rem;
+            cursor: pointer;
+        }
+
+        .flash-row button {
+            flex: 0 0 auto;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #146e89;
+            font-size: 0.75rem;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .flash-row button:hover {
+            background: #ffffff;
+        }
+
+        .flash-row button.cancel {
+            background: #ff5252;
+            color: #ffffff;
+            border-color: #ff5252;
+        }
+
+        .flash-row button.cancel:hover {
+            background: #ff1744;
+            border-color: #ff1744;
+        }
+
+        .flash-progress-wrap {
+            margin-top: 0.6rem;
+            display: none;
+        }
+
+        .flash-progress-wrap.active {
+            display: block;
+        }
+
+        .flash-progress-bar {
+            width: 100%;
+            height: 16px;
+            background: #0a0a0a;
+            border: 2px solid #1a7fa0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .flash-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #1a7fa0 0%, #4caf50 100%);
+            transition: width 0.2s ease;
+        }
+
+        .flash-progress-text {
+            font-size: 0.75rem;
+            color: #ffffff;
+            margin-top: 0.3rem;
+            text-align: center;
         }
 
 
@@ -434,6 +544,27 @@
                     </div>
                 </div>
 
+                <div class="flash-panel">
+                    <div class="flash-panel-title">⚡ FLASH CUSTOM FIRMWARE</div>
+                    <div class="flash-row">
+                        <select id="fwSlot">
+                            <option value="production" selected>Production (0x10000)</option>
+                            <option value="bootloader">Bootloader (0x1000)</option>
+                            <option value="partition_table">Partition Table (0x8000)</option>
+                            <option value="ota_data">OTA Data (0xE000)</option>
+                        </select>
+                        <input type="file" id="fwFile" accept=".bin">
+                        <button id="fwFlashBtn" onclick="uploadAndFlashFirmware()">Upload &amp; Flash</button>
+                        <button id="fwCancelBtn" class="cancel" onclick="cancelFirmwareUpload()" style="display:none;">Cancel</button>
+                    </div>
+                    <div class="flash-progress-wrap" id="fwProgressWrap">
+                        <div class="flash-progress-bar">
+                            <div class="flash-progress-fill" id="fwProgressFill"></div>
+                        </div>
+                        <div class="flash-progress-text" id="fwProgressText">Preparing...</div>
+                    </div>
+                </div>
+
                 <div class="console" id="console">
                     <div class="no-data">Waiting for serial data...</div>
                 </div>
@@ -589,6 +720,16 @@
                     }
                 });
 
+                // Subscribe to firmware upload progress topic
+                const fwProgressTopic = `pierre/firmware/${deviceId}/${sessionId}/progress`;
+                client.subscribe(fwProgressTopic, { qos: 0 }, (err) => {
+                    if (err) {
+                        console.error('Firmware progress subscribe error:', err);
+                    } else {
+                        console.log('Subscribed to firmware progress:', fwProgressTopic);
+                    }
+                });
+
                 // Reset button
                 connectBtn.disabled = false;
                 connectBtn.textContent = 'Connect to Live Stream';
@@ -597,6 +738,12 @@
             // Handle incoming messages
             client.on('message', (topic, payload) => {
                 const message = payload.toString();
+
+                // Firmware upload progress messages from the phone
+                if (topic.startsWith('pierre/firmware/') && topic.endsWith('/progress')) {
+                    handleFirmwareProgressMessage(message);
+                    return;
+                }
 
                 // Check message type based on topic ending
                 if (topic.endsWith('/status')) {
@@ -886,6 +1033,206 @@
             } catch (error) {
                 console.error('❌ Failed to send command:', error);
                 addLog(`❌ Failed to send command: ${error}`, 'error');
+            }
+        }
+
+        // =====================================================================
+        // Custom firmware upload over MQTT
+        // =====================================================================
+        // We send the .bin file in small chunks on pierre/firmware/{device}/{session}/chunk,
+        // bracketed by /start and /end messages. The phone writes the chunks into a cache
+        // file and, once /end arrives, triggers its existing custom-firmware flash path.
+        // The phone publishes progress updates back on /progress, which we render here.
+
+        const FW_CHUNK_SIZE = 32 * 1024; // 32 KB per chunk (~44 KB base64, well under HiveMQ free limits)
+        const FW_CHUNK_DELAY_MS = 40;    // Pause between chunks to give the broker a break
+        let fwUploadState = null;         // { file, slot, totalChunks, buffer, cancelled }
+
+        function setFwProgress(percent, text) {
+            const wrap = document.getElementById('fwProgressWrap');
+            const fill = document.getElementById('fwProgressFill');
+            const txt = document.getElementById('fwProgressText');
+            wrap.classList.add('active');
+            fill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+            if (text !== undefined) txt.textContent = text;
+        }
+
+        function hideFwProgress() {
+            document.getElementById('fwProgressWrap').classList.remove('active');
+            document.getElementById('fwProgressFill').style.width = '0%';
+            document.getElementById('fwProgressText').textContent = '';
+        }
+
+        function setFwUploading(isUploading) {
+            document.getElementById('fwFlashBtn').style.display = isUploading ? 'none' : '';
+            document.getElementById('fwCancelBtn').style.display = isUploading ? '' : 'none';
+            document.getElementById('fwFile').disabled = isUploading;
+            document.getElementById('fwSlot').disabled = isUploading;
+        }
+
+        function arrayBufferToBase64(buffer) {
+            // Convert a Uint8Array/ArrayBuffer slice to base64 in a way that works in all browsers.
+            let binary = '';
+            const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+            const chunk = 0x8000;
+            for (let i = 0; i < bytes.length; i += chunk) {
+                binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+            }
+            return btoa(binary);
+        }
+
+        async function uploadAndFlashFirmware() {
+            if (!client || !client.connected) {
+                alert('Not connected to device');
+                return;
+            }
+            const fileInput = document.getElementById('fwFile');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Please choose a .bin file first');
+                return;
+            }
+            const file = fileInput.files[0];
+            if (!file.name.toLowerCase().endsWith('.bin')) {
+                if (!confirm(`"${file.name}" does not look like a .bin file. Upload anyway?`)) return;
+            }
+            const slot = document.getElementById('fwSlot').value;
+
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const sessionId = document.getElementById('sessionId').value.trim();
+            if (!deviceId || !sessionId) {
+                alert('Device or session ID missing');
+                return;
+            }
+
+            const buffer = new Uint8Array(await file.arrayBuffer());
+            const totalChunks = Math.ceil(buffer.length / FW_CHUNK_SIZE);
+
+            fwUploadState = {
+                file, slot, totalChunks, buffer,
+                cancelled: false,
+                deviceId, sessionId,
+            };
+
+            setFwUploading(true);
+            setFwProgress(0, `Uploading ${file.name} (${(buffer.length / 1024).toFixed(0)} KB, ${totalChunks} chunks)...`);
+            addLog(`📤 Uploading firmware: ${file.name} (${buffer.length} bytes) to slot "${slot}"`, 'info');
+
+            const base = `pierre/firmware/${deviceId}/${sessionId}`;
+
+            // Start message
+            const startPayload = JSON.stringify({
+                filename: file.name,
+                size: buffer.length,
+                chunks: totalChunks,
+                slot: slot,
+            });
+            await new Promise((resolve) => {
+                client.publish(`${base}/start`, startPayload, { qos: 1 }, (err) => {
+                    if (err) addLog(`❌ Failed to send start: ${err.message}`, 'error');
+                    resolve();
+                });
+            });
+
+            // Chunks
+            for (let i = 0; i < totalChunks; i++) {
+                if (fwUploadState && fwUploadState.cancelled) {
+                    addLog('✖ Upload cancelled', 'warning');
+                    client.publish(`${base}/abort`, '{}', { qos: 1 });
+                    setFwUploading(false);
+                    hideFwProgress();
+                    fwUploadState = null;
+                    return;
+                }
+                const start = i * FW_CHUNK_SIZE;
+                const end = Math.min(start + FW_CHUNK_SIZE, buffer.length);
+                const slice = buffer.subarray(start, end);
+                const b64 = arrayBufferToBase64(slice);
+                const chunkPayload = JSON.stringify({
+                    index: i,
+                    offset: start,
+                    data: b64,
+                });
+
+                await new Promise((resolve, reject) => {
+                    client.publish(`${base}/chunk`, chunkPayload, { qos: 1 }, (err) => {
+                        if (err) reject(err); else resolve();
+                    });
+                });
+
+                const pct = Math.floor(((i + 1) / totalChunks) * 90); // up to 90% for upload, last 10% for flash
+                setFwProgress(pct, `Uploading chunk ${i + 1}/${totalChunks}`);
+                if (FW_CHUNK_DELAY_MS > 0) await new Promise(r => setTimeout(r, FW_CHUNK_DELAY_MS));
+            }
+
+            // End message
+            await new Promise((resolve) => {
+                client.publish(`${base}/end`, '{}', { qos: 1 }, (err) => {
+                    if (err) addLog(`❌ Failed to send end: ${err.message}`, 'error');
+                    resolve();
+                });
+            });
+
+            setFwProgress(92, 'Upload complete, waiting for phone to flash...');
+            addLog('✅ Upload complete, waiting for flasher to start...', 'success');
+            // Don't flip setFwUploading(false) yet — wait for progress="done" from the phone.
+        }
+
+        function cancelFirmwareUpload() {
+            if (fwUploadState) {
+                fwUploadState.cancelled = true;
+            }
+        }
+
+        function handleFirmwareProgressMessage(payloadStr) {
+            let msg;
+            try {
+                msg = JSON.parse(payloadStr);
+            } catch (e) {
+                console.warn('Invalid firmware progress payload:', payloadStr);
+                return;
+            }
+            const status = msg.status || '';
+            const received = msg.received || 0;
+            const total = msg.total || 0;
+            const extra = msg.message ? ` — ${msg.message}` : '';
+            switch (status) {
+                case 'uploading': {
+                    if (total > 0) {
+                        const pct = Math.floor((received / total) * 90);
+                        setFwProgress(pct, `Phone received ${received}/${total} chunks${extra}`);
+                    }
+                    break;
+                }
+                case 'ready':
+                    setFwProgress(92, `Upload received by phone${extra}`);
+                    addLog(`📦 Phone has full firmware${extra}`, 'info');
+                    break;
+                case 'flashing':
+                    setFwProgress(95, `Flashing ESP32${extra}`);
+                    addLog(`⚡ ESP32 flash in progress${extra}`, 'info');
+                    break;
+                case 'done':
+                    setFwProgress(100, `Flash complete${extra}`);
+                    addLog(`🎉 Flash complete${extra}`, 'success');
+                    setFwUploading(false);
+                    fwUploadState = null;
+                    setTimeout(hideFwProgress, 4000);
+                    break;
+                case 'error':
+                    addLog(`❌ Flash error${extra}`, 'error');
+                    setFwProgress(100, `Error${extra}`);
+                    setFwUploading(false);
+                    fwUploadState = null;
+                    setTimeout(hideFwProgress, 6000);
+                    break;
+                case 'aborted':
+                    addLog(`✖ Upload aborted by phone${extra}`, 'warning');
+                    setFwUploading(false);
+                    fwUploadState = null;
+                    hideFwProgress();
+                    break;
+                default:
+                    console.log('Unknown firmware progress status:', status, msg);
             }
         }
 
