@@ -710,7 +710,7 @@
 
     <!-- Version number in bottom left corner -->
     <div style="position: fixed; bottom: 10px; left: 10px; background: #000; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; z-index: 1000; border: 1px solid #333;">
-        v1.6.0
+        v1.6.1
     </div>
 
     <!-- MQTT.js from CDN -->
@@ -879,6 +879,11 @@
                     handleFirmwareProgressMessage(message);
                     return;
                 }
+
+                // Mirror live serial "Flash progress: NN%" lines into the modal
+                // progress text while a flash is in progress, so the user can see
+                // percentage updates as they happen without watching the console.
+                maybeUpdateFlashProgressFromSerial(message);
 
                 // Check message type based on topic ending
                 if (topic.endsWith('/status')) {
@@ -1466,6 +1471,27 @@
             }
         }
 
+        /**
+         * Watch the live serial stream for "Flash progress: NN%" lines emitted
+         * by the phone's flasher and mirror the percentage into the modal
+         * progress bar text. Only has an effect while the progress wrap is
+         * visible (i.e. a flash is currently in progress) so we don't overwrite
+         * other status text like "Upload complete, waiting for phone to flash...".
+         */
+        function maybeUpdateFlashProgressFromSerial(msg) {
+            const wrap = document.getElementById('fwProgressWrap');
+            if (!wrap || !wrap.classList.contains('active')) return;
+            const m = msg.match(/Flash progress:\s*(\d{1,3})\s*%/i);
+            if (!m) return;
+            const pct = parseInt(m[1], 10);
+            if (isNaN(pct)) return;
+            // Map the firmware's 0-100% range onto the 92-100 slice of our bar —
+            // the 0-92% range is the upload phase we already showed, the rest is
+            // the on-phone flash phase.
+            const barPct = 92 + Math.round((pct / 100) * 8);
+            setFwProgress(barPct, `Flashing ESP32 — ${pct}%`);
+        }
+
         function handleFirmwareProgressMessage(payloadStr) {
             let msg;
             try {
@@ -1500,7 +1526,13 @@
                     addLog(`🎉 Flash complete${extra}`, 'success');
                     setFwUploading(false);
                     fwUploadState = null;
-                    setTimeout(hideFwProgress, 4000);
+                    // Show the "complete" state for a moment, then auto-close the modal.
+                    setTimeout(() => {
+                        hideFwProgress();
+                        // Force-close bypasses the fwIsUploading guard in closeFirmwareModal
+                        // (which is false at this point anyway).
+                        document.getElementById('fwModal').classList.remove('active');
+                    }, 1500);
                     break;
                 case 'error':
                     addLog(`❌ Flash error${extra}`, 'error');
