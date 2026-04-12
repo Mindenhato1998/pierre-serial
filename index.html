@@ -710,7 +710,7 @@
 
     <!-- Version number in bottom left corner -->
     <div style="position: fixed; bottom: 10px; left: 10px; background: #000; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; z-index: 1000; border: 1px solid #333;">
-        v1.6.1
+        v1.6.2
     </div>
 
     <!-- MQTT.js from CDN -->
@@ -1015,6 +1015,15 @@
 
             console.appendChild(logLine);
             logs.push(message); // Store raw message without timestamp
+
+            // Cap at 1000 visible lines so the browser doesn't bog down
+            const MAX_LOG_LINES = 1000;
+            while (console.childElementCount > MAX_LOG_LINES) {
+                console.removeChild(console.firstElementChild);
+            }
+            if (logs.length > MAX_LOG_LINES) {
+                logs = logs.slice(-MAX_LOG_LINES);
+            }
 
             // Auto-scroll
             if (autoScroll) {
