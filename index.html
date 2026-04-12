@@ -710,7 +710,7 @@
 
     <!-- Version number in bottom left corner -->
     <div style="position: fixed; bottom: 10px; left: 10px; background: #000; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; z-index: 1000; border: 1px solid #333;">
-        v1.6.2
+        v1.6.3
     </div>
 
     <!-- MQTT.js from CDN -->
@@ -937,13 +937,9 @@
                 } else if (topic.endsWith('/applog')) {
                     // App log message - display with different style
                     addLog(message, 'applog');
-                    messageCount++;
-                    document.getElementById('messageCount').textContent = `${messageCount} messages`;
                 } else {
                     // Regular serial data message
                     addLog(message);
-                    messageCount++;
-                    document.getElementById('messageCount').textContent = `${messageCount} messages`;
                 }
             });
 
@@ -1024,6 +1020,11 @@
             if (logs.length > MAX_LOG_LINES) {
                 logs = logs.slice(-MAX_LOG_LINES);
             }
+
+            // Cap the displayed message count at MAX_LOG_LINES too
+            messageCount++;
+            const displayCount = Math.min(messageCount, MAX_LOG_LINES);
+            document.getElementById('messageCount').textContent = `${displayCount} messages`;
 
             // Auto-scroll
             if (autoScroll) {
